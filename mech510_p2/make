@@ -1,0 +1,26 @@
+#!/bin/bash
+
+bcs=(1 2 3)
+meshsizes=(10 20 40 80 160 320 640)
+
+tempfile=mech_510_2_v3_temp.f95
+runfile=mech_510_2_v3.f95
+
+for bc in ${bcs[@]}; do
+    for meshsize in ${meshsizes[@]}; do
+        cp $tempfile $runfile
+        chmod 700 $runfile
+
+        sed -i s/MESHSIZE/$meshsize/g $runfile
+        sed -i s/BC/$bc/g $runfile
+        
+        #echo $bc
+        #echo $meshsize
+
+        gfortran $runfile
+        ./a.exe
+    done 
+done
+
+#gfortran mech_510_2_v3.f95
+##./a.exe
