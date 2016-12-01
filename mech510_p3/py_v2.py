@@ -76,7 +76,7 @@ if __name__ == '__main__':
     ax1.set_title('Contour Plot of the Source Terms for the Energy Equation, Meshsize = {}'.format(meshsizes[0]),
                   fontsize=fs,fontweight=fw)
     ax1.tick_params(axis='both',which='major',labelsize=20)
-    cbar.set_label(r'$FI_{computed}$',size=fs+5)
+    cbar.set_label(r'$Source_{computed}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20) 
     
     fig_name = 'mech510_p3_5.png'
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     ax2.set_title('Contour Plot of the Analytic Source Terms for the Energy Equation, Meshsize = {}'.format(meshsizes[0]),
                   fontsize=fs,fontweight=fw)
     ax2.tick_params(axis='both',which='major',labelsize=20)
-    cbar.set_label(r'$FI_{analytic}$',size=fs+5)
+    cbar.set_label(r'$Source_{analytic}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20) 
     
     fig_name = 'mech510_p3_6.png'
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     ax3.set_title('Contour Plot of the Source Term Error for the Energy Equation, Meshsize = {}'.format(meshsizes[0]),
                   fontsize=fs,fontweight=fw)
     ax3.tick_params(axis='both',which='major',labelsize=20)
-    cbar.set_label(r'$FI_{analytic} - FI_{computed}$',size=fs+5)
+    cbar.set_label(r'$Source_{analytic} - Source_{computed}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20) 
     
     fig_name = 'mech510_p3_7.png'
