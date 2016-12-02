@@ -13,15 +13,15 @@ MODULE meshmod
 	
 	! Discretization parameters
     INTEGER, PARAMETER :: imax = 200                        ! Size of mesh (x-direction)
-	INTEGER, PARAMETER :: jmax = 80                       ! Size of mesh (y-direction)
+	INTEGER, PARAMETER :: jmax = 80                        ! Size of mesh (y-direction)
  
     REAL*8, PARAMETER  :: xmax = 5.0D+0                    ! Maximum x-position
 	REAL*8, PARAMETER  :: ymax = 1.0D+0                    ! Maximum y-position
-    REAL*8, PARAMETER  :: tmax = 1.0D+0                    ! Maximum time
+    REAL*8, PARAMETER  :: tmax = 20.0D+0                    ! Maximum time
 	
-	INTEGER, PARAMETER :: scheme = 2                        ! 1 for RK2, 2 for IE
+	INTEGER, PARAMETER :: scheme = 1                        ! 1 for RK2, 2 for IE
 	
-	INTEGER, PARAMETER :: problem = 2                        ! 1 for tests, 2 for channel
+	INTEGER, PARAMETER :: problem = 2                        ! 1 for test (square domain), 2 for channel
 	
 
 	! Required data
@@ -40,9 +40,9 @@ MODULE meshmod
     REAL*8, PARAMETER  :: dx = xmax/imax                   ! Grid size
 	REAL*8, PARAMETER  :: dy = ymax/jmax
 
-	!REAL*8, PARAMETER  :: delta_t = (Re*Pr*dx**2)/4. ! Time step from stability considerations
-	REAL*8, PARAMETER  :: delta_t = 0.05 ! Time step from stability considerations
-    INTEGER, PARAMETER :: maxn = nint(tmax/delta_t)    ! Max time step (i.e. last n index)
+	REAL*8              :: delta_t     ! Time step from stability considerations
+	!REAL*8, PARAMETER  :: delta_t = 0.01 ! Time step from stability considerations
+    INTEGER             :: maxn    ! Max time step (i.e. last n index)
 	
     REAL*8, DIMENSION(0:jmax+1,0:imax+1) :: Tmesh          ! Mesh of solutions; includes ghost cells
     REAL*8, DIMENSION(0:jmax+1,0:imax+1) :: umesh,vmesh    ! Mesh of velocities; includes ghost cells
@@ -68,22 +68,41 @@ PROGRAM mech510_3
 
     REAL*8   ::   tn = 0.0D+0    ! Time at index n
 	
+	IF (dx < dy) THEN
+	    WRITE(*,*) "dx smaller than dy"
+	    delta_t = (Re*Pr*dx**2)/2. - 0.75*(Re*Pr*dx**2)/2.
+    ELSE
+	    WRITE(*,*) "dy smaller than dx"
+	    delta_t = (Re*Pr*dy**2)/2. - 0.75*(Re*Pr*dy**2)/2.
+	
+	END IF
+	
+	maxn = nint(tmax/delta_t)
+	
+	
+	WRITE(*,*) delta_t
+	
 	! Initialize mesh
 	CALL init_mesh
-	CALL set_bcs(tn,Tmesh)
+
 	CALL output_Tmesh(tn)
 	! Calculate flux integrals
     !CALL calc_integrals(Tmesh,FIn)
 	
-	!CALL rk2(0,maxn-1,tn)
+	IF (scheme == 1) THEN 
+		CALL rk2(0,maxn-1,tn)
+	ELSE
+		CALL ie(0,maxn-1,tn)
+	END IF
 	
-	!CALL ie(0,maxn-1,tn)
+	!CALL ie(0,0,tn)
 	
 	! Output computed and analytic flux integrals
 	!CALL output_integrals
 	
+	!WRITE(*,*) tn
 	
-	!CALL output_Tmesh(tn)
+	CALL output_Tmesh(tn)
 	
 END PROGRAM mech510_3
 
@@ -152,7 +171,7 @@ SUBROUTINE init_mesh_channel    ! Initialize mesh with CV average values of T(x,
 	USE meshmod
     IMPLICIT NONE
 	
-	REAL*8 :: xa,xb,yc,yd    ! Positions of cell edges
+	REAL*8 :: xa,xb,yc,yd,ymid    ! Positions of cell edges
 	REAL*8                               :: dudx,dudy,dvdx,dvdy    ! Flux terms for u and v
 	REAL*8                               :: source                 ! Source at face
 	REAL*8                               :: source_analytic        ! Analytic source term
@@ -171,7 +190,9 @@ SUBROUTINE init_mesh_channel    ! Initialize mesh with CV average values of T(x,
 		  	
             ! Compute control volume averages			
 		    Tmesh(j,i) = 1./(2.*dy*dx)*(yd**2-yc**2)*(xb-xa)
-	        umesh(j,i) = 1./(2.*dy*dx)*(3.*ubar*(yd**2-yc**2) - 2.*ubar*(yd**3 - yc**3))*(xb-xa)
+	        !umesh(j,i) = 1./(2.*dy*dx)*(3.*ubar*(yd**2-yc**2) - 2.*ubar*(yd**3 - yc**3))*(xb-xa)
+			ymid = (j-1./2.)*dy
+			umesh(j,i) = 6.*ubar*ymid*(1.-ymid)
 			vmesh(j,i) = 0.
 			
 		END DO
@@ -242,22 +263,23 @@ SUBROUTINE set_bcs(tn, Tmeshn)             ! Subroutine to update boundary condi
 			!Tmeshn(jmax+1,i) = 2.*Tw-Tmeshn(jmax,i)
 			Tmeshn(jmax+1,i) = Tmeshn(jmax,i)
 		END DO
-	ELSE
 	
+	ELSE
 		Ttop = 1
 		Tbot = 0
 		
 		DO j = 1, jmax
 			yc = (j-1)*dy
 			yd = j*dy
-			!Tw = ((-2.*yc**2 + 3*Ec*Pr*ubar**2*(1./10.*((2*yc-1)**5-(2*yd-1)**5)-yc+yd) &
-		    !		+2.*yd**2)/(4.*dy))		
+			Tw = ((-2.*yc**2 + 3*Ec*Pr*ubar**2*(1./10.*((2*yc-1)**5-(2*yd-1)**5)-yc+yd) &
+		    		+2.*yd**2)/(4.*dy))		
 			
-			yc = (j-1./2.)*dy
+			!yc = (j-1./2.)*dy
 			
-			Tw = yc + 3./4.*Pr*Ec*ubar**2*(1.-(1.-2.*yc)**4)
-			WRITE(*,*) Tw
+			!Tw = yc + 3./4.*Pr*Ec*ubar**2*(1.-(1.-2.*yc)**4)
 			Tmeshn(j,0) = 2.*Tw - Tmeshn(j,1)
+
+			Tmeshn(j,imax+1) = Tmeshn(j,imax)
 		END DO
 		
 		DO i = 1, imax
@@ -284,7 +306,7 @@ SUBROUTINE rk2(nmin, nmax, tn)                        ! Subroutine for time inte
     
     REAL*8, DIMENSION(0:jmax+1,0:imax+1) :: FI_1         ! Interim flux integrals for time advance scheme
 	
-	REAL*8, DIMENSION(1:jmax,1:imax)   :: rhsn           ! Right-hand-side of energy equation at time level n
+	REAL*8, DIMENSION(1:jmax,1:imax)     :: rhsn           ! Right-hand-side of energy equation at time level n
 	REAL*8                               :: rhs1           ! Interim right-hand-side of energy equation at time level n
 
     DO n = nmin,nmax  ! Want to obtain solution at maxn, hence last loop is maxn-1
@@ -306,6 +328,7 @@ SUBROUTINE rk2(nmin, nmax, tn)                        ! Subroutine for time inte
 			END DO
         END DO
         
+
         ! ------Calculate T(n+1)------
         tn = delta_t*(n+1)                   ! Time n+1
 		
@@ -327,47 +350,6 @@ SUBROUTINE rk2(nmin, nmax, tn)                        ! Subroutine for time inte
     
 END SUBROUTINE rk2
 
-
-SUBROUTINE set_lhs(lhs,vsize,alpha,betas,bca,bcb,bcc,bcd)     ! Initialize LHS for approximate factorization, for IE time advance
-	
-	USE meshmod
-    IMPLICIT NONE
-	
-
-	INTEGER                              :: vsize             ! Size of column (in x, first call) or row (in y, second call)
-	REAL*8, DIMENSION(0:vsize+1,3)       :: lhs 
-	REAL*8                               :: alpha
-	REAL*8, DIMENSION(1:vsize)           :: betas
-	INTEGER                              :: bca,bcb,bcc,bcd
-	INTEGER                              :: jind,iind
-	
-
-	DO jind = 0,vsize+1
-	    !WRITE(*,*) jind
-		iind = jind 
-		
-		IF (jind == 0) THEN     ! Boundary conditions (left and bottom)
-		    lhs(jind ,1) = 0
-			lhs(jind ,2) = bca   
-			lhs(jind ,3) = bcb
-					
-		ELSE IF (jind  == vsize+1) THEN  ! Boundary conditions (right and top)
-		    lhs(jind ,1) = bcc 
-			lhs(jind ,2) = bcd
-			lhs(jind ,3) = 0
-		
-		ELSE
-			
-			lhs(jind ,1) = -alpha-betas(iind-1)
-			lhs(jind ,2) = 1.+2.*alpha
-			lhs(jind ,3) = betas(iind+1)-alpha
-			
-		END IF
-	END DO
-		    
-		
-
-END SUBROUTINE set_lhs
 
 ! =======================
 
@@ -402,9 +384,9 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
         ! ------Calculate T(1)------
         tn = delta_t*n                     ! Current time
         
-		
         CALL set_bcs(tn, Tmesh)         ! Update boundary conditions of solution mesh
         CALL calc_integrals(Tmesh,FIn)      ! Calculate flux integrals
+		
 		
         ! Go across columns from row to row; first part of approx factorization
 		alpha = delta_t/(Re*Pr*dx**2)
@@ -415,30 +397,37 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
 			! Set LHS for approximate factorization (first part)
 			lhsx = 0.0D+0
 			betasx = umesh(j,:)*delta_t/(2.*dx)
-
-			CALL set_lhs(lhsx,imax,alpha,betasx,-1,1,-1,1)
-			
-			CALL Thomas(lhsx,rhs,imax)
+   
+			CALL set_lhs(lhsx,imax,alpha,betasx,1,1,1,1)
+			!CALL Thomas(lhsx,rhs,imax)
 			
 			dT_tilda(j,:) = rhs
 
         END DO
+		WRITE(*,"(999F15.10)") (lhsx(j,1),j=0,imax+1)
 		
+		WRITE(*,*)
+		
+		WRITE(*,"(999F15.10)") (lhsx(j,2),j=0,imax+1)
+		
+		WRITE(*,*)
+		
+		WRITE(*,"(999F15.10)") (lhsx(j,3),j=0,imax+1)
 
 		! Go across rows from column to column; second part of approx factorization
-		!alpha = delta_t/(Re*Pr*dy**2)
+		alpha = delta_t/(Re*Pr*dy**2)
 		DO i = 1,imax
 			! Set LHS for approximate factorization (second part)
 			lhsy = 0.0D+0
 			betasy = vmesh(:,i)*delta_t/(2.*dy)
 
-			CALL set_lhs(lhsy,jmax,alpha,betasy,-1,1,-1,1)
-			
+			CALL set_lhs(lhsy,jmax,alpha,betasy,1,1,1,1)
 			CALL Thomas(lhsy,dT_tilda(:,i),jmax)
 			
 			dT(:,i) = dT_tilda(:,i)
         END DO
 		
+
 		
 		DO j = 1,jmax
 			DO i = 1,imax
@@ -446,9 +435,56 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
 			END DO
 		END DO 
 		
+		
+
     END DO
 	
 END SUBROUTINE ie
+
+
+! =======================
+
+SUBROUTINE set_lhs(lhs,vsize,alpha,betas,bca,bcb,bcc,bcd)     ! Initialize LHS for approximate factorization, for IE time advance
+	
+	USE meshmod
+    IMPLICIT NONE
+	
+
+	INTEGER                              :: vsize             ! Size of column (in x, first call) or row (in y, second call)
+	REAL*8, DIMENSION(0:vsize+1,3)       :: lhs 
+	REAL*8                               :: alpha
+	REAL*8, DIMENSION(1:vsize)           :: betas
+	INTEGER                              :: bca,bcb,bcc,bcd
+	INTEGER                              :: jind,iind
+	
+
+	DO jind = 0,vsize+1
+	
+		iind = jind 
+		
+		IF (jind == 0) THEN     ! Boundary conditions (left and bottom)
+		    lhs(jind,1) = 0
+			lhs(jind,2) = bca   
+			lhs(jind,3) = bcb
+					
+		ELSE IF (jind  == vsize+1) THEN  ! Boundary conditions (right and top)
+		    lhs(jind,1) = bcc 
+			lhs(jind,2) = bcd
+			lhs(jind,3) = 0
+		
+		ELSE
+			
+			lhs(jind,1) = -alpha-betas(iind-1)
+			lhs(jind,2) = 1.+2.*alpha
+			lhs(jind,3) = betas(iind+1)-alpha
+			
+		END IF
+	END DO
+		    
+		
+
+END SUBROUTINE set_lhs
+
 ! =======================
 
 SUBROUTINE calc_integrals(Tmeshn,FI)  ! Subroutine to evaluate flux integrals at time level n, with sources
@@ -596,6 +632,7 @@ SUBROUTINE output_Tmesh(tn) ! Output final solutions for plotting
         WRITE(90,"(999F15.10)") (Tmesh(j,i), i=1,imax)             ! Implied loop to write out every column (computed flux integral)
     ENDDO
 
+	CLOSE(UNIT=90)
 END SUBROUTINE output_Tmesh
 ! =================== functions ==========================
 
