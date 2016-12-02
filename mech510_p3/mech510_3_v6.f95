@@ -1,9 +1,9 @@
 ! MECH 510, Programming Assignment 3
 ! Timothy Chui, 37695129
 ! Program to numerically solve the incompressible energy equation
-! Time advance scheme: RK2
-! Space discretization scheme: 2nd-Order Upwind (default), 2nd-Order Centred, 1st-Order Upwind
-! Nov 2016
+! Time advance schemes: RK2, IE
+! Space discretization scheme: 2nd-Order Centred
+! Dec 2016
 
 
 ! =================== modules =========================
@@ -12,16 +12,16 @@ MODULE meshmod
     ! Declare variables to pass arround
 	
 	! Discretization parameters
-    INTEGER, PARAMETER :: imax = 200                        ! Size of mesh (x-direction)
-	INTEGER, PARAMETER :: jmax = 80                       ! Size of mesh (y-direction)
+    INTEGER, PARAMETER :: imax = 25                      ! Size of mesh (x-direction)
+	INTEGER, PARAMETER :: jmax = 10                     ! Size of mesh (y-direction)
  
-    REAL*8, PARAMETER  :: xmax = 5.0D+0                    ! Maximum x-position
-	REAL*8, PARAMETER  :: ymax = 1.0D+0                    ! Maximum y-position
-    REAL*8, PARAMETER  :: tmax = 20.0D+0                    ! Maximum time
+    REAL*8, PARAMETER  :: xmax = 15.0D+0                  ! Maximum x-position
+	REAL*8, PARAMETER  :: ymax = 1.0D+0                 ! Maximum y-position
+    REAL*8, PARAMETER  :: tmax = 40.0D+0                 ! Maximum time
 	
-	INTEGER, PARAMETER :: scheme = 2                        ! 1 for RK2, 2 for IE
+	INTEGER, PARAMETER :: scheme = 1                     ! 1 for RK2, 2 for IE
 	
-	INTEGER, PARAMETER :: problem = 2                        ! 1 for test (square domain), 2 for channel
+	INTEGER, PARAMETER :: problem = 3                   ! 1 for test (square domain), 2 for channel, 3 for real
 	
 
 	! Required data
@@ -30,7 +30,7 @@ MODULE meshmod
     REAL*8, PARAMETER  :: T0 = 1.0                         ! Constant for T(x,y)
 	REAL*8, PARAMETER  :: Re = 50.0                        ! Reynolds number
 	REAL*8, PARAMETER  :: Pr = 0.7                         ! Prandtl number 
-	REAL*8, PARAMETER  :: Ec = 0.1                         ! Eckert number
+	REAL*8, PARAMETER  :: Ec = 0.001                         ! Eckert number
 	REAL*8, PARAMETER  :: ubar = 3.0                        ! Constant for u(x,y)
 	
 	
@@ -80,7 +80,7 @@ PROGRAM mech510_3
 	
 	ELSE
 		
-		delta_t = 0.01
+		delta_t = 0.1
 		
 	END IF
 	
@@ -258,7 +258,7 @@ SUBROUTINE set_bcs(tn, Tmeshn)             ! Subroutine to update boundary condi
     REAL*8                        :: tn       ! Time at index n
     REAL*8, DIMENSION(0:jmax+1,0:imax+1) :: Tmeshn    ! Mesh at time level n (could be interim mesh)
 	REAL*8                        :: Tw,Ttop,Tbot       ! Wall values
-    REAL*8                        :: yc,yd
+    REAL*8                        :: yc,yd,xmid
 	IF (problem == 1) THEN
 		DO j = 1, jmax
 			Tmeshn(j,0) = Tmeshn(j,1)
@@ -272,7 +272,7 @@ SUBROUTINE set_bcs(tn, Tmeshn)             ! Subroutine to update boundary condi
 			Tmeshn(jmax+1,i) = Tmeshn(jmax,i)
 		END DO
 	
-	ELSE
+	ELSE IF (problem == 2) THEN
 		Ttop = 1
 		Tbot = 0
 		
@@ -294,6 +294,41 @@ SUBROUTINE set_bcs(tn, Tmeshn)             ! Subroutine to update boundary condi
 			Tmeshn(0,i) = 2.*Tbot - Tmeshn(1,i)
 			Tmeshn(jmax+1,i) = 2.*Ttop - Tmeshn(jmax,i)
 		END DO
+	
+	ELSE
+	
+		
+		Tbot = 0
+		
+		DO j = 1, jmax
+			yc = (j-1)*dy
+			yd = j*dy
+			Tw = ((-2.*yc**2 + 3*Ec*Pr*ubar**2*(1./10.*((2*yc-1)**5-(2*yd-1)**5)-yc+yd) &
+		    		+2.*yd**2)/(4.*dy))		
+			
+			!yc = (j-1./2.)*dy
+			
+			!Tw = yc + 3./4.*Pr*Ec*ubar**2*(1.-(1.-2.*yc)**4)
+			Tmeshn(j,0) = 2.*Tw - Tmeshn(j,1)
+
+			Tmeshn(j,imax+1) = Tmeshn(j,imax)
+		END DO
+		
+		DO i = 1, imax
+		
+			xmid = (i-1./2.)*dx
+			
+			IF (xmid >= 1. .AND. xmid <= 3.) THEN
+				Ttop = 2. - cos(pi*(xmid-1.))
+			ELSE
+				Ttop = 1.
+			END IF
+				
+				
+			Tmeshn(0,i) = 2.*Tbot - Tmeshn(1,i)
+			Tmeshn(jmax+1,i) = 2.*Ttop - Tmeshn(jmax,i)
+		END DO
+	
 		
 	END IF
 
@@ -411,18 +446,6 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
 			dT_tilda(j,:) = rhs
 
         END DO
-
-		!WRITE(*,"(999F15.10)") (lhsx(i,1),i=0,imax+1)
-		!WRITE(*,*)
-		!WRITE(*,"(999F15.10)") (lhsx(i,2),i=0,imax+1)
-		!!WRITE(*,*)
-		!WRITE(*,"(999F15.10)") (lhsx(i,3),i=0,imax+1)
-		
-		!WRITE(*,*) dT_tilda
-		
-		!WRITE(*,*) 
-		!WRITE(*,*)
-		
 		
 		! Go across rows from column to column; second part of approx factorization
 		alpha = delta_t/(Re*Pr*dy**2)
@@ -437,12 +460,7 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
 			dT(:,i) = dT_tilda(:,i)
         END DO
 		
-		!WRITE(*,"(999F15.10)") (lhsy(j,1),j=0,jmax+1)
-		!WRITE(*,*)
-		!WRITE(*,"(999F15.10)") (lhsy(j,2),j=0,jmax+1)
-		!WRITE(*,*)
-		!WRITE(*,"(999F15.10)") (lhsy(j,3),j=0,jmax+1)
-		
+		! Update solution
 		DO j = 1,jmax
 			DO i = 1,imax
 				Tmesh(j,i) = Tmesh(j,i) + dT(j,i)
