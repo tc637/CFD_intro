@@ -1,4 +1,4 @@
 #!/bin/bash
 
-gfortran mech510_3_v5.f95
+gfortran mech510_3_v5a.f95
 time ./a.exe
