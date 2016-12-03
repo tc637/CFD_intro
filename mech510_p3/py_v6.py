@@ -75,9 +75,9 @@ if __name__ == '__main__':
     tmax = 40
     scheme = 2
     p = 3
-    jmaxes = [10,20,40,80]
+    jmaxes = [10,20,40,80,160]
     
-    imaxes = [25,50,100,200]
+    imaxes = [25,50,100,200,400]
     ind = 1
 
     imax = imaxes[ind]
@@ -92,16 +92,19 @@ if __name__ == '__main__':
     
     max_bots = []
     grids = []
-    for each_size in np.arange(0,4):
+    for each_size in np.arange(0,len(imaxes)):
         
         imax = imaxes[each_size]
         jmax = jmaxes[each_size]
         
-        grids.append(imax*jmax)
-        
         
         dx = xmax/imax
         dy = ymax/jmax
+        
+        grids.append(np.sqrt(dx*dy))
+        
+        
+
         
         xpos,ypos,csol = read_files(imax,jmax,xmax,ymax,tmax,scheme,p)
         
@@ -113,7 +116,13 @@ if __name__ == '__main__':
         print(max_loc[0])
         print(max_x)
         
+        
+        #test_value = ((csol[round(jmax/2),round(imax/2)] 
+        #+ csol[round(jmax/2+1),round(imax/2)] + csol[round(jmax/2),round(imax/2+1)] 
+        #+ csol[round(jmax/2+1),round(imax/2+1)])/4.)
+        
         max_bots.append(np.max(max_bot/dy))
+        #max_bots.append(test_value)
         
         
         if each_size == 3:
@@ -156,8 +165,8 @@ if __name__ == '__main__':
                 frameon=None)
                        
                        
-    max_bots = max_bots[1:]
-    grids = grids[1:]
+    max_bots = max_bots[1:len(imaxes)-1][::-1]
+    grids = grids[1:len(imaxes)-1][::-1]
     
     
     phi1 = max_bots[0]

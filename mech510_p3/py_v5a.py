@@ -78,7 +78,7 @@ if __name__ == '__main__':
     jmaxes = [10,20,40,80]
     
     imaxes = [25,50,100,200]
-    ind = 3
+    ind = 0
 
     imax = imaxes[ind]
     jmax = jmaxes[ind]
@@ -110,6 +110,7 @@ if __name__ == '__main__':
     before = before[1:11,1:26]
     ana = ana[1:11,1:26]
     
+    
     fig1,ax1 = plt.subplots(1,1,figsize=(16,12))
     levels = np.linspace(np.min(before),np.max(before),20)
     CS = ax1.contour(cols_plot,rows_plot,before, levels, colors='k')
@@ -132,17 +133,17 @@ if __name__ == '__main__':
     cbar = plt.colorbar(contour_filled)
     ax2.set_xlabel('x', fontsize=fs, fontweight=fw)
     ax2.set_ylabel('y', fontsize=fs, fontweight=fw)
-    ax2.set_title('Contour Plot of the Solution Mesh for the Energy Equation, Meshsize = {}, t = 0'.format(imax),
+    ax2.set_title('Contour Plot of the Test Solution Mesh for the Energy Equation, Meshsize = {}, t = 0.1'.format(imax),
                   fontsize=fs,fontweight=fw)
     ax2.tick_params(axis='both',which='major',labelsize=20)
     cbar.set_label(r'$\overline{T}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20) 
-    
     """
+    
     # ========================
     
     """
-    xpos,ypos,csol = read_files(imax,jmax,xmax,ymax,0,scheme,p)
+    xpos,ypos,csol = read_files(imax,jmax,xmax,ymax,tmax,scheme,p)
     
     
     fig3,ax3 = plt.subplots(1,1,figsize=(16,12))
@@ -153,13 +154,13 @@ if __name__ == '__main__':
     cbar = plt.colorbar(contour_filled)
     ax3.set_xlabel('x', fontsize=fs, fontweight=fw)
     ax3.set_ylabel('y', fontsize=fs, fontweight=fw)
-    ax3.set_title('Contour Plot of the Solution Mesh for the Energy Equation, Meshsize = {}, t = 0'.format(imax),
+    ax3.set_title('Contour Plot of the IE Solution Mesh for the Energy Equation, Meshsize = {}, t = 0.1'.format(imax),
                   fontsize=fs,fontweight=fw)
     ax3.tick_params(axis='both',which='major',labelsize=20)
     cbar.set_label(r'$\overline{T}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20) 
-    """
     
+    """
     l2_norms = []
     for each_size in np.arange(0,4):
         
