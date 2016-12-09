@@ -1,0 +1,4 @@
+#!/bin/bash
+
+gfortran mech510_proj_v1.f95
+./a.out

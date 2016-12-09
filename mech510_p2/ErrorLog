@@ -1,0 +1,3 @@
+C:\Users\Timothy\Documents\GitHub\mech510_p2\mech_510_2_v1.F95(25) : error 921 - The NINT intrinsic function is not permitted in an initialisation expression
+C:\Users\Timothy\Documents\GitHub\mech510_p2\mech_510_2_v1.F95(161) : comment 1031 - This IF statement is redundant as it will always succeed
+C:\Users\Timothy\Documents\GitHub\mech510_p2\mech_510_2_v1.F95(195) : comment 1031 - This IF statement is redundant as it will always succeed
