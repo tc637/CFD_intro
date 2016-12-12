@@ -509,10 +509,24 @@ SUBROUTINE test_jacobian ! Subroutine to test correctness of flux Jacobian
 	END DO
         
     ! Output error between LHS and RHS for cells with changed flux integrals
-    WRITE(*,*)
+    WRITE(*,*) "Error for P"
     
     DO j=int(jmax/2-1),int(jmax/2+1)
         WRITE(*,"(9999F30.20)") (LHS(j,i,1)-RHS(j,i,1), i=int(imax/2-1),int(imax/2+1))
+    END DO
+    
+    WRITE(*,*)
+    WRITE(*,*) "Error for u"
+    
+    DO j=int(jmax/2-1),int(jmax/2+1)
+        WRITE(*,"(9999F30.20)") (LHS(j,i,2)-RHS(j,i,2), i=int(imax/2-1),int(imax/2+1))
+    END DO
+    
+    WRITE(*,*)
+    WRITE(*,*) "Error for v"
+    
+    DO j=int(jmax/2-1),int(jmax/2+1)
+        WRITE(*,"(9999F30.20)") (LHS(j,i,3)-RHS(j,i,3), i=int(imax/2-1),int(imax/2+1))
     END DO
     
     WRITE(*,*)
