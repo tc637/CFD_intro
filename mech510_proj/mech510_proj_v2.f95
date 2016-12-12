@@ -96,11 +96,11 @@ PROGRAM mech510_proj
 	
     CALL init_mesh
 	CALL calc_integrals(solmesh_n, FI_n, jacobs_n)
-    CALL output_integrals
+    !CALL output_integrals
     
     ! Test Jacobian calculations
     IF (problem == 1) THEN  
-        CALL test_jacobian(solmesh_n, FI_n, jacobs_n)
+        CALL test_jacobian
     END IF
     
 END PROGRAM mech510_proj
@@ -228,24 +228,25 @@ SUBROUTINE calc_integrals(solmesh,FI,jacobs)  ! Subroutine to evaluate flux inte
             ! ------ Handle Jacobians ------
         
             ! Calculate F Jacobians
-            CALL calc_fjacob(i,i+1,solmesh,jacobpa,jacobpb)  ! Indices i+0.5/i, i+0.5/i+1
-            CALL calc_fjacob(i-1,i,solmesh,jacobma,jacobmb)  ! Indices i-0.5/i-1, i-0.5/i
+            CALL calc_fjacob(i,i+1,solmesh,jacobpa,jacobpb)  ! Indices i+0.5 (i,i+1)
+            CALL calc_fjacob(i-1,i,solmesh,jacobma,jacobmb)  ! Indices i-0.5 (i-1,i)
             
-            jacobs(j,i,:,:,1) = 1./dx*(jacobpa - jacobmb)        ! Bx
-            jacobs(j,i,:,:,2) = 1./dx*(jacobpb)                  ! Cx
-            jacobs(j,i,:,:,3) = -1./dx*(jacobma)                 ! Ax
+            jacobs(j,i,:,:,1) = -1./dx*(jacobma)                 ! Ax
+            jacobs(j,i,:,:,2) = 1./dx*(jacobpa - jacobmb)        ! Bx
+            jacobs(j,i,:,:,3) = 1./dx*(jacobpb)                  ! Cx
+            
             
             ! Calculate G Jacobians
             CALL calc_gjacob(j,j+1,solmesh,jacobpa,jacobpb)  ! Indices j+0.5/j, j+0.5/j+1
             CALL calc_gjacob(j-1,j,solmesh,jacobma,jacobmb)  ! Indices j-0.5/j-1, j-0.5/j
             
-            jacobs(j,i,:,:,4) = 1./dx*(jacobpa - jacobmb)        ! By
-            jacobs(j,i,:,:,5) = 1./dx*(jacobpb)                  ! Cy
-            jacobs(j,i,:,:,6) = -1./dx*(jacobma)                 ! Ay
+            jacobs(j,i,:,:,4) = -1./dy*(jacobma)                 ! Ay
+            jacobs(j,i,:,:,5) = 1./dy*(jacobpa - jacobmb)        ! By
+            jacobs(j,i,:,:,6) = 1./dy*(jacobpb)                  ! Cy
             
             ! For FI validation
             IF (problem == 1) THEN  
-                ! Calculate analytic flux integral at CV centroid
+                ! Calculate analytic flux integral at CV centroids
                 CALL calc_analytic(xpos,ypos)
                 
             END IF
@@ -360,7 +361,7 @@ SUBROUTINE output_integrals ! Output computed and analytic flux integrals for te
     ! (1 -> 3, analytic), (4 -> 6, computed)
     DO ind = 1,6
         
-        ! Analytic flux integrals
+        ! Output analytic flux integrals
         IF (ind <= 3) THEN
             varind = ind   ! Variable index
             
@@ -374,7 +375,7 @@ SUBROUTINE output_integrals ! Output computed and analytic flux integrals for te
             END DO
             CLOSE(UNIT=10*ind)
             
-        ! Compute flux integrals
+        ! Output computed flux integrals
         ELSE
             varind = ind-3 ! Variable index (subtract by 3 to get 1, 2, 3)
             
@@ -449,62 +450,74 @@ SUBROUTINE calc_gjacob(jinda, jindb, solmesh, fuj, fujp1) ! Subroutine to comput
     fuj(2,2) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/4. + 1./(Re*dy)
     fuj(2,3) = (solmesh(jindb,i,2)+solmesh(jinda,i,2))/4.
     fuj(3,1) = 1./2.
-    fuj(3,3) = (solmesh(jindb,i,2)+solmesh(jinda,i,2))/2. + 1./(Re*dy)
+    fuj(3,3) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/2. + 1./(Re*dy)
      
     ! Compute non-zero derivatives for dG/dU_i,j+1
     fujp1(1,3) = 1./(2.*beta)
     fujp1(2,2) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/4. - 1./(Re*dy)
     fujp1(2,3) = (solmesh(jindb,i,2)+solmesh(jinda,i,2))/4.
     fujp1(3,1) = 1./2.
-    fujp1(3,3) = (solmesh(jindb,i,2)+solmesh(jinda,i,2))/2. - 1./(Re*dy)
+    fujp1(3,3) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/2. - 1./(Re*dy)
     
 END SUBROUTINE calc_gjacob
 
 
 
+! =======================
 
 
-
-
-
-
-
-
-SUBROUTINE test_jacobian(solmesh_old,FI_old,jacobs_old)
+SUBROUTINE test_jacobian ! Subroutine to test correctness of flux Jacobian
 
     USE meshmod
     IMPLICIT NONE
     
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: solmesh_old
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: FI_old
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3,3,6)  :: jacobs_old       ! Scaled Jacobians at time level n (Ax,Bx,Cx,Ay,By,Cy)
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: LHS, RHS         ! LHS and RHS of equation (1) 
-    INTEGER*8                                   :: varind     
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: solmesh_old     ! Copy of old solution mesh (at time 0)
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: FI_old          ! Copy of old flux integral (at time 1)
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3,3,6)  :: jacobs_old      ! Scaled Jacobians at time level n (Ax,Bx,Cx,Ay,By,Cy)
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: LHS,RHS         ! LHS and RHS of equation (1)
+    INTEGER*8                                   :: varind          ! Variable index
     
+    ! Set delta_U (make 0 except for centre of array)
     d_solmesh = 0.0D+0
     d_solmesh(int(jmax/2),int(imax/2),:) = 1.0D-6
     
-    solmesh_old = solmesh_old + d_solmesh
+    solmesh_old = solmesh_n  ! Retain copy of solution at time n = 0
+    FI_old = FI_n            ! Retain copy of flux integral at time n = 0
+    jacobs_old = jacobs_n    ! Retain Jacobians at time n = 0
     
-    CALL calc_integrals(solmesh_n, FI_n, jacobs_n)
-    
-    LHS = FI_n - FI_old
+    solmesh_n = solmesh_old(:,:,:) + d_solmesh(:,:,:)  ! Update solution to time n = 1
 
-    !DO j = 1,jmax      ! Loop over rows (interior CVs)
-!
-!		DO i = 1,imax  ! Loop over columns (interior CVs)
-!!            
- !           DO varind = 1,3  ! Loop over variables
- !               RHS(j,i,varind) = (jacobs_old(j,i,varind,:,1)*d_solmesh(j,i-1,:) + jacobs_old(j,i,varind,:,2)*d_solmesh(j,i,:) &
- !                           + jacobs_old(j,i,varind,:,3)*d_solmesh(j,i+1,:) + jacobs_old(j,i,varind,:,4)*d_solmesh(j-1,i,:) &
- !                           + jacobs_old(j,i,varind,:,5)*d_solmesh(j,i,:) + jacobs_old(j,i,varind,:,6)*d_solmesh(j+1,i,:))
- !           END DO
- !           
- !!       END DO
-!	END DO
+    CALL calc_integrals(solmesh_n, FI_n, jacobs_n)     ! Compute new flux integral
+     
+    LHS = FI_n - FI_old                                ! LHS of equation (1)
+
+    ! Compute RHS of equation (1), using Jacobians at time n = 0
+    DO j = 1,jmax      ! Loop over rows (interior CVs)
+        DO i = 1,imax  ! Loop over columns (interior CVs)
+            DO varind = 1,3  ! Loop over variables
+            
+                ! Matrix multiply for each term; flip sign to match flux integral
+                RHS(j,i,varind) = -(sum(jacobs_old(j,i,varind,:,1)*d_solmesh(j,i-1,:)) &
+                                    + sum(jacobs_old(j,i,varind,:,2)*d_solmesh(j,i,:)) &
+                                    + sum(jacobs_old(j,i,varind,:,3)*d_solmesh(j,i+1,:)) &
+                                    + sum(jacobs_old(j,i,varind,:,4)*d_solmesh(j-1,i,:)) &
+                                    + sum(jacobs_old(j,i,varind,:,5)*d_solmesh(j,i,:)) &
+                                    + sum(jacobs_old(j,i,varind,:,6)*d_solmesh(j+1,i,:)))
+                                    
+            END DO
+        END DO
+	END DO
         
-        
+    ! Output error between LHS and RHS for cells with changed flux integrals
+    WRITE(*,*)
     
+    DO j=int(jmax/2-1),int(jmax/2+1)
+        WRITE(*,"(9999F30.20)") (LHS(j,i,1)-RHS(j,i,1), i=int(imax/2-1),int(imax/2+1))
+    END DO
+    
+    WRITE(*,*)
+    
+
 END SUBROUTINE test_jacobian
 
 
