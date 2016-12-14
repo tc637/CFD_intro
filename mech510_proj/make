@@ -1,4 +1,4 @@
 #!/bin/bash
 
-gfortran mech510_proj_v2.f95
+gfortran -fcheck=all mech510_proj_v3.f95
 ./a.out
