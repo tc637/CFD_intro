@@ -1,5 +1,5 @@
 #!/bin/bash
 
-gfortran -fcheck=all mech510_proj_v3.f95
-./a.out
+gfortran -fcheck=all mech510_proj_v3a.f95
+time ./a.out 
 
