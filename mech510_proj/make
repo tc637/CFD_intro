@@ -2,3 +2,4 @@
 
 gfortran -fcheck=all mech510_proj_v3.f95
 ./a.out
+

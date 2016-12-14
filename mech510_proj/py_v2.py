@@ -44,7 +44,7 @@ if __name__ == '__main__':
     
     fs = 20.
     fw = "bold"
-    varind = 0
+    varind = 2
     
     varstrs = ['Pressure','u-Velocity','v-Velocity']
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     final_array = final_array + init_array
     
     fig1,ax1 = plt.subplots(1,1,figsize=(16,12))
-    levels = np.linspace(np.min(init_array[:,:,varind]),np.max(init_array[:,:,varind]),20)
+    levels = np.linspace(np.min(init_array[:,:,varind]),np.max(init_array[:,:,varind]),40)
     CS = ax1.contour(cols_plot, rows_plot, init_array[:,:,varind], levels, colors='k')
     ax1.clabel(CS, colors='k', fmt='%6.4f', fontsize=16)
     contour_filled = ax1.contourf(cols_plot, rows_plot, init_array[:,:,varind], levels)
@@ -114,8 +114,9 @@ if __name__ == '__main__':
     cbar.set_label(r'$P_{test}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20)
     
+    
     fig2,ax2 = plt.subplots(1,1,figsize=(16,12))
-    levels = np.linspace(np.min(final_array[:,:,varind]),np.max(final_array[:,:,varind]),20)
+    levels = np.linspace(np.min(final_array[:,:,varind]),np.max(final_array[:,:,varind]),40)
     CS = ax2.contour(cols_plot, rows_plot, final_array[:,:,varind], levels, colors='k')
     ax2.clabel(CS, colors='k', fmt='%6.4f', fontsize=16)
     contour_filled = ax2.contourf(cols_plot, rows_plot, final_array[:,:,varind], levels)
@@ -125,16 +126,23 @@ if __name__ == '__main__':
     ax2.set_title('Contour Plot of the Test Data for {}, t = 0.05, Meshsize = {}'.format(varstr,meshsizes[0]),
                   fontsize=fs,fontweight=fw)
     ax2.tick_params(axis='both',which='major',labelsize=20)
-    cbar.set_label(r'$P_{test}$',size=fs+5)
+    cbar.set_label(r'$v_{test}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20)
     
-    print(final_array[:,:,0])
+    fig_name = 'mech510_proj_2a_' + str(varind+1) + ".png"
+    fig2.savefig(fig_name, dpi=100, facecolor='w', edgecolor='w',
+        orientation='portrait', papertype=None, format=None,
+        transparent=False, bbox_inches="tight", pad_inches=0.1,
+        frameon=None)
+    
+    print(fig_name)
+    #print(final_array[:,:,varind])
     #print(final_array[4,4,1])
     #print(final_array[4,4,2])
     
     
-    pfile0 = 'pmesh_cn10_xmax_1_ymax_1_t_0_p_2.txt'
-    pfile1 = 'pmesh_cn10_xmax_1_ymax_1_t_1_p_2.txt'
+    pfile0 = 'vmesh_cn10_xmax_1_ymax_1_t_0_p_2.txt'
+    pfile1 = 'vmesh_cn10_xmax_1_ymax_1_t_1_p_2.txt'
     
     solution = []
     with open(pfile1, 'r') as pfile:
@@ -146,7 +154,7 @@ if __name__ == '__main__':
     
     
     fig3,ax3 = plt.subplots(1,1,figsize=(16,12))
-    levels = np.linspace(np.min(solution),np.max(solution),20)
+    levels = np.linspace(np.min(solution),np.max(solution),40)
     CS = ax3.contour(cols_plot, rows_plot, solution, levels, colors='k')
     ax3.clabel(CS, colors='k', fmt='%6.4f', fontsize=16)
     contour_filled = ax3.contourf(cols_plot, rows_plot, solution, levels)
@@ -156,10 +164,16 @@ if __name__ == '__main__':
     ax3.set_title('Contour Plot of the Computed Solutions for {}, t = 0.05, Meshsize = {}'.format(varstr,meshsizes[0]),
                   fontsize=fs,fontweight=fw)
     ax3.tick_params(axis='both',which='major',labelsize=20)
-    cbar.set_label(r'$P_{test}$',size=fs+5)
+    cbar.set_label(r'$v_{computed}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20)
     
+    fig_name = 'mech510_proj_2c_' + str(varind+1) + ".png"
+    fig3.savefig(fig_name, dpi=100, facecolor='w', edgecolor='w',
+        orientation='portrait', papertype=None, format=None,
+        transparent=False, bbox_inches="tight", pad_inches=0.1,
+        frameon=None)
     
+    print(fig_name)
 
     plt.show()
     

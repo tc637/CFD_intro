@@ -12,40 +12,40 @@ MODULE meshmod
     ! Declare variables to pass arround
 	
 	! Discretization parameters
-    INTEGER, PARAMETER :: imax = 10                          ! Size of mesh (x-direction)
-	INTEGER, PARAMETER :: jmax = 10                          ! Size of mesh (y-direction)
+    INTEGER, PARAMETER :: imax = 10                            ! Size of mesh (x-direction)
+	INTEGER, PARAMETER :: jmax = 10                            ! Size of mesh (y-direction)
  
-    REAL*8, PARAMETER  :: xmax = 1.0D+0                      ! Maximum x-position
-	REAL*8, PARAMETER  :: ymax = 1.0D+0                       ! Maximum y-position
-    REAL*8, PARAMETER  :: tmax = 40.0D+0                      ! Maximum time
+    REAL*8, PARAMETER  :: xmax = 1.0D+0                        ! Maximum x-position
+	REAL*8, PARAMETER  :: ymax = 1.0D+0                        ! Maximum y-position
+    REAL*8, PARAMETER  :: tmax = 40.0D+0                       ! Maximum time
 		
-	INTEGER, PARAMETER :: problem = 2                         ! 1 for test (square domain)
+	INTEGER, PARAMETER :: problem = 2                          ! 1 for test (square domain)
 	
 	! Required data
-	REAL*8, PARAMETER  :: u0 = 1.0                            ! Constant for u(x,y) (test problems)
-	REAL*8, PARAMETER  :: v0 = 1.0                            ! Constant for v(x,y)
-    REAL*8, PARAMETER  :: P0 = 1.0                            ! Constant for P(x,y)
-	REAL*8, PARAMETER  :: Re = 10.0                           ! Reynolds number
-    REAL*8, PARAMETER  :: beta = 1.0                          ! Parameter for artificial compressibility
+	REAL*8, PARAMETER  :: u0 = 1.0                             ! Constant for u(x,y) (test problems)
+	REAL*8, PARAMETER  :: v0 = 1.0                             ! Constant for v(x,y)
+    REAL*8, PARAMETER  :: P0 = 1.0                             ! Constant for P(x,y)
+	REAL*8, PARAMETER  :: Re = 100.0                           ! Reynolds number (test data uses Re = 100 !!!)
+    REAL*8, PARAMETER  :: beta = 1.0                           ! Parameter for artificial compressibility
     
     ! Trig factors
-	REAL*8             :: Cx,C2x,Sx,S2x                       ! cos(pix),cos(2pix),sin(pix),sin(2pix)
-    REAL*8             :: Cy,C2y,Sy,S2y                       ! cos(piy),cos(2piy),sin(piy),sin(2piy)
+	REAL*8             :: Cx,C2x,Sx,S2x                        ! cos(pix),cos(2pix),sin(pix),sin(2pix)
+    REAL*8             :: Cy,C2y,Sy,S2y                        ! cos(piy),cos(2piy),sin(piy),sin(2piy)
 	
 	
     ! Values that do not need to be changed
-    INTEGER            :: i,j,n                               ! Space and time indices
-    REAL*8, PARAMETER  :: pi = 3.141592654D+0                 ! Value of pi
-    REAL*8, PARAMETER  :: dx = xmax/imax                      ! Cell sizes
+    INTEGER            :: i,j,n                                ! Space and time indices
+    REAL*8, PARAMETER  :: pi = 3.141592654D+0                  ! Value of pi
+    REAL*8, PARAMETER  :: dx = xmax/imax                       ! Cell sizes
 	REAL*8, PARAMETER  :: dy = ymax/jmax
 
-	REAL*8              :: dt = 0.05                               ! Time step variable
-    INTEGER             :: maxn                               ! Max time step (i.e. last n index)
+	REAL*8              :: dt = 0.05                           ! Time step variable
+    INTEGER             :: maxn                                ! Max time step (i.e. last n index)
 	
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: solmesh_n      ! Mesh of solutions at n; includes ghost cells (3rd dim: 1 = p, 2 = u, 3 = v)
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: d_solmesh      ! Change in solution of mesh
-	REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: FI_n,FI_ana    ! Computed and analytic flux integrals at time level n
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3,3,6)  :: jacobs_n       ! Scaled Jacobians at time level n (Ax,Bx,Cx,Ay,By,Cy)
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: solmesh_n   ! Mesh of solutions at n; includes ghost cells (3rd dim: 1 = p, 2 = u, 3 = v)
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: d_solmesh   ! Change in solution of mesh
+	REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: FI_n,FI_ana ! Computed and analytic flux integrals at time level n
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3,3,6)  :: jacobs_n    ! Scaled Jacobians at time level n (Ax,Bx,Cx,Ay,By,Cy)
 	
 END MODULE meshmod
 
@@ -223,20 +223,20 @@ END SUBROUTINE update_trig
 
 ! =======================
 
-SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integration (IE); rows first
+SUBROUTINE ie(nmin, nmax, tn)                              ! Subroutine for time integration (IE); rows first
 
     USE meshmod
     IMPLICIT NONE
     
-    INTEGER                               :: nmin         ! Initial time index
-    INTEGER                               :: nmax         ! Final time index
-    REAL*8                                :: tn           ! Time at index n
-    
+    INTEGER                               :: nmin          ! Initial time index
+    INTEGER                               :: nmax          ! Final time index
+    REAL*8                                :: tn            ! Time at index n
+
     INTEGER, PARAMETER                    :: maxsize = 200 ! Max possible size of array
     	
-	REAL*8, DIMENSION(3,0:maxsize,0:maxsize) :: d_soltilda     ! Interim dU (rows first) (3 X j X i)
+	REAL*8, DIMENSION(3,0:maxsize,0:maxsize) :: d_soltilda ! Interim dU (rows first) (3 X j X i)
 	
-    REAL*8, DIMENSION(3,0:maxsize) :: rhs         ! RHS of approximate factorization equation
+    REAL*8, DIMENSION(3,0:maxsize) :: rhs                  ! RHS of approximate factorization equation
 	
     REAL*8, DIMENSION(3,3,3,0:maxsize)      :: lhsx
 	REAL*8, DIMENSION(3,3,3,0:maxsize)      :: lhsy
@@ -245,9 +245,9 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
 	DO n = nmin,nmax  ! Want to obtain solution at maxn, hence last loop is maxn-1
         
         ! ------Calculate T(1)------
-        tn = dt*n                     ! Current time
+        tn = dt*n                       ! Current time
         
-        CALL set_bcs(solmesh_n)         ! Update boundary conditions of solution mesh
+        CALL set_bcs(solmesh_n)                             ! Update boundary conditions of solution mesh
         CALL calc_integrals(solmesh_n, FI_n, jacobs_n)      ! Calculate flux integrals
 		
         WRITE(*,*) tn
@@ -260,23 +260,23 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
             DO i = 0,imax+1
             
                 IF (i == 0 .AND. i == imax+1) THEN
-                    rhs(:,i) = (/0.0,0.0,0.0/)
+                    rhs(:,i) = (/0.0,0.0,0.0/)         ! BCs
                 ELSE
-                    rhs(:,i) = FI_n(j,i,:)*dt
+                    rhs(:,i) = FI_n(j,i,:)*dt          ! Flux integrals with time step
                 END IF
-                WRITE(*,*) (rhs(:,i))
             END DO
                     
             ! Set LHS for approximate factorization (first part)
             lhsx = 0.0D+0
 
-            CALL set_lhs(lhsx,j,imax,maxsize,1) ! 0 = Neumann, 1 = Dirichlet, for variables D, u, v
-            CALL SolveBlockTri(lhsx, rhs, imax, maxsize)
-         
+            CALL set_lhs(lhsx,j,imax,maxsize,1)             ! Along constant rows (j)
+            CALL SolveBlockTri(lhsx, rhs, imax+2, maxsize)  ! Call subroutine to solve block tridiag problem
             
-            d_soltilda(:,j,:) = rhs ! (transpose back to imax X 3)
-   
+            d_soltilda(:,j,:) = rhs                         ! Assign solution to new array for clarity
+            
         END DO
+        
+        
 		
 		! Go across rows from column to column; second part of approx factorization
 
@@ -288,8 +288,9 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
             
             ! Set LHS for approximate factorization (second part)
 	    	lhsy = 0.0D+0
-			CALL set_lhs(lhsy,i,jmax,maxsize,2) ! Dirichlet BCs on top and bottom
-			CALL SolveBlockTri(lhsy, d_soltilda(:,:,i), jmax, maxsize)
+            
+			CALL set_lhs(lhsy,i,jmax,maxsize,2)             ! Along constant columns (i)
+			CALL SolveBlockTri(lhsy, d_soltilda(:,:,i), jmax+2, maxsize)
 			
             ! Write to delta_U array
             DO j = 1,jmax
@@ -298,7 +299,6 @@ SUBROUTINE ie(nmin, nmax, tn)                        ! Subroutine for time integ
             
         END DO
 		
-        WRITE(*,*)
 
 		! Update solution
         solmesh_n = solmesh_n + d_solmesh
@@ -315,12 +315,13 @@ SUBROUTINE set_lhs(lhs,nd,vsize,maxsize,dir)     ! Initialize LHS for approximat
     IMPLICIT NONE
 	
 
-	INTEGER                              :: vsize             ! Size of column (in x, first call) or row (in y, second call)
-    INTEGER                              :: maxsize 
-    REAL*8, DIMENSION(3,3,3,0:maxsize)     :: lhs
-    INTEGER                              :: nd    ! Positional index (block index)
-    INTEGER                              :: dir   ! Direction, either 1 (x) or 2 (y)
-	INTEGER                              :: knd
+	INTEGER                              :: vsize    ! Size of column (in x, first call) or row (in y, second call)
+    INTEGER                              :: maxsize  ! Maximum array size allocation
+    REAL*8, DIMENSION(3,3,3,0:maxsize)   :: lhs      ! LHS matrix
+    INTEGER                              :: nd       ! Positional index (block index)
+    INTEGER                              :: dir      ! Direction, either 1 (x) or 2 (y)
+    
+	INTEGER                              :: knd      ! Index for going down tridiagonal matrix
     REAL*8, DIMENSION(3,3)               :: bc1 = 0.0D+0, bc2 = 0.0D+0, bc3 = 0.0D+0 ! Boundary condition arrays
 
     ! Blocks on main diagonal always the identity matrix
@@ -329,10 +330,10 @@ SUBROUTINE set_lhs(lhs,nd,vsize,maxsize,dir)     ! Initialize LHS for approximat
     bc2(3,3) = 1.0
 
     DO knd = 0,vsize+1      ! Go down block tridiagonal matrix
-
-        IF (dir == 1) THEN
+    
+        IF (dir == 1) THEN  ! Along constant rows
         
-            IF (knd == 0) THEN
+            IF (knd == 0) THEN   ! Left wall
                 
                 bc3(1,1) = -1.0  ! Neumann for pressure
                 bc3(2,2) = 1.0   ! Dirichlet for u
@@ -341,7 +342,7 @@ SUBROUTINE set_lhs(lhs,nd,vsize,maxsize,dir)     ! Initialize LHS for approximat
                 lhs(:,:,2,knd) = bc2
                 lhs(:,:,3,knd) = bc3
                 
-            ELSE IF (knd == vsize+1) THEN
+            ELSE IF (knd == vsize+1) THEN   ! Right wall
             
                 bc1(1,1) = -1.0  ! Neumann for pressure
                 bc1(2,2) = 1.0   ! Dirichlet for u
@@ -351,16 +352,16 @@ SUBROUTINE set_lhs(lhs,nd,vsize,maxsize,dir)     ! Initialize LHS for approximat
                 lhs(:,:,2,knd) = bc2
 
             ELSE
-            
-                lhs(:,:,1,knd) = jacobs_n(nd,knd,:,:,1)*dt
-                lhs(:,:,2,knd) = bc2 + jacobs_n(nd,knd,:,:,2)*dt
-                lhs(:,:,3,knd) = jacobs_n(nd,knd,:,:,3)*dt
+                ! Interior tridiagonals
+                lhs(:,:,1,knd) = jacobs_n(nd,knd,:,:,1)*dt        ! dt*Ax
+                lhs(:,:,2,knd) = bc2 + jacobs_n(nd,knd,:,:,2)*dt  ! I + dt*Bx 
+                lhs(:,:,3,knd) = jacobs_n(nd,knd,:,:,3)*dt        ! dt*Cx
                 
             END IF
             
-        ELSE
+        ELSE     ! Along constant columns
         
-            IF (knd == 0) THEN
+            IF (knd == 0) THEN   ! Bottom wall
                 
                 bc3(1,1) = -1.0  ! Neumann for pressure
                 bc3(2,2) = 1.0   ! Dirichlet for u
@@ -369,7 +370,7 @@ SUBROUTINE set_lhs(lhs,nd,vsize,maxsize,dir)     ! Initialize LHS for approximat
                 lhs(:,:,2,knd) = bc2
                 lhs(:,:,3,knd) = bc3
                 
-            ELSE IF (knd == vsize+1) THEN
+            ELSE IF (knd == vsize+1) THEN  ! Top wall
             
                 bc1(1,1) = -1.0  ! Neumann for pressure
                 bc1(2,2) = 1.0   ! Dirichlet for u
@@ -379,10 +380,10 @@ SUBROUTINE set_lhs(lhs,nd,vsize,maxsize,dir)     ! Initialize LHS for approximat
                 lhs(:,:,2,knd) = bc2
 
             ELSE
-            
-                lhs(:,:,1,knd) = jacobs_n(knd,nd,:,:,1)*dt
-                lhs(:,:,2,knd) = bc2 + jacobs_n(knd,nd,:,:,2)*dt
-                lhs(:,:,3,knd) = jacobs_n(knd,nd,:,:,3)*dt
+                ! Interior tridiagonals                   
+                lhs(:,:,1,knd) = jacobs_n(knd,nd,:,:,4)*dt        ! dt*Ay
+                lhs(:,:,2,knd) = bc2 + jacobs_n(knd,nd,:,:,5)*dt  ! I + dt*By
+                lhs(:,:,3,knd) = jacobs_n(knd,nd,:,:,6)*dt        ! dt*Cy
                 
             END IF
             
@@ -451,8 +452,8 @@ SUBROUTINE calc_integrals(solmesh,FI,jacobs)  ! Subroutine to evaluate flux inte
             
             
             ! Calculate G Jacobians
-            CALL calc_gjacob(j,j+1,solmesh,jacobpa,jacobpb)  ! Indices j+0.5/j, j+0.5/j+1
-            CALL calc_gjacob(j-1,j,solmesh,jacobma,jacobmb)  ! Indices j-0.5/j-1, j-0.5/j
+            CALL calc_gjacob(j,j+1,solmesh,jacobpa,jacobpb)  ! Indices j+0.5 (j,j+1)
+            CALL calc_gjacob(j-1,j,solmesh,jacobma,jacobmb)  ! Indices j-0.5 (j-1,j)
             
             jacobs(j,i,:,:,4) = -1./dy*(jacobma)                 ! Ay
             jacobs(j,i,:,:,5) = 1./dy*(jacobpa - jacobmb)        ! By
