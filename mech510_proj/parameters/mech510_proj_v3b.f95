@@ -26,7 +26,7 @@ MODULE meshmod
 	REAL*8, PARAMETER  :: v0 = 1.0                             ! Constant for v(x,y)
     REAL*8, PARAMETER  :: P0 = 1.0                             ! Constant for P(x,y)
 	REAL*8, PARAMETER  :: Re = 100.0                           ! Reynolds number (test data uses Re = 100 !!!)
-    REAL*8, PARAMETER  :: beta = BETA.0D-2                          ! Parameter for artificial compressibility
+    REAL*8, PARAMETER  :: beta = 300.0D-2                          ! Parameter for artificial compressibility
     REAL*8, PARAMETER  :: apres = 0.0                          ! Parameter for pressure source term to handle oscillations
     
     INTEGER            :: over = 0                             ! Switch for overrelaxation (0 = No, 1 = Yes)

@@ -1,0 +1,23 @@
+#!/bin/bash -l
+
+betas=$(seq 5 5 300)
+tempfile=mech510_proj_v3b_template.f95
+runfile="mech510_proj_v3b.f95"
+
+rm betas*
+
+for beta in ${betas[@]}; do
+    cp $tempfile $runfile
+    chmod 700 $runfile
+
+    sed -ie "s/BETA/$beta/g" $runfile
+   
+    gfortran -fcheck=all $runfile
+    echo $beta >> betas.txt
+    { time ./a.out >> betas.stderr ;  } 2>> betas.txt
+done
+
+./py_betas.py
+
+#gfortran -fcheck=all mech510_proj_v3b_template.f95
+#time ./a.out
