@@ -1,0 +1,15 @@
+#!/bin/bash -l
+
+omega=$1
+cp py_plot_temp.py py_plot.py
+
+filename=pmesh_cn10_xmax_1_ymax_1_t*p_2_100_0_$omega.txt
+
+filename=$(ls $filename)
+
+echo $filename
+
+sed -ie s/FILE1/$filename/g py_plot.py
+sed -ie s/OMEGA/$omega/g py_plot.py
+
+./py_plot.py

@@ -1,0 +1,132 @@
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.0000000000000000     
+ Iteration took          618  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_31_p_2_100_0_100.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_31_p_2_100_0_100.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_31_p_2_100_0_100.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.0500000000000000     
+ Iteration took          589  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_29_p_2_100_0_105.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_29_p_2_100_0_105.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_29_p_2_100_0_105.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.1000000000000001     
+ Iteration took          563  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_28_p_2_100_0_110.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_28_p_2_100_0_110.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_28_p_2_100_0_110.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.1499999999999999     
+ Iteration took          539  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_27_p_2_100_0_115.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_27_p_2_100_0_115.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_27_p_2_100_0_115.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.2000000000000000     
+ Iteration took          517  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_26_p_2_100_0_120.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_26_p_2_100_0_120.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_26_p_2_100_0_120.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.2500000000000000     
+ Iteration took          496  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_25_p_2_100_0_125.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_25_p_2_100_0_125.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_25_p_2_100_0_125.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.3000000000000000     
+ Iteration took          478  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_24_p_2_100_0_130.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_24_p_2_100_0_130.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_24_p_2_100_0_130.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.3500000000000001     
+ Iteration took          464  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_135.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_135.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_135.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.3999999999999999     
+ Iteration took          450  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_140.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_140.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_140.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.4500000000000000     
+ Iteration took          435  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_145.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_145.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_145.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.5000000000000000     
+ Iteration took          429  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_150.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_150.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_150.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.5500000000000000     
+ Iteration took          424  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_155.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_155.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_155.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.6000000000000001     
+ Iteration took          425  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_160.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_160.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_160.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.6499999999999999     
+ Iteration took          424  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_165.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_165.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_165.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.7000000000000000     
+ Iteration took          428  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_170.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_170.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_21_p_2_100_0_170.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.7500000000000000     
+ Iteration took          430  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_175.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_175.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_175.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.8000000000000000     
+ Iteration took          437  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_180.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_180.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_180.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.8500000000000001     
+ Iteration took          447  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_185.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_185.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_22_p_2_100_0_185.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.8999999999999999     
+ Iteration took          465  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_190.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_190.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_23_p_2_100_0_190.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    1.9500000000000000     
+ Iteration took          486  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_24_p_2_100_0_195.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_24_p_2_100_0_195.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_24_p_2_100_0_195.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    2.0000000000000000     
+ Iteration took          524  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_26_p_2_100_0_200.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_26_p_2_100_0_200.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_26_p_2_100_0_200.txt                                                                                                                                                         
+ Beta =    1.0000000000000000       A =    0.0000000000000000      Over =    2.0499999999999998     
+ Iteration took          575  time steps to reach steady-state.
+
+ Writing output to pmesh_cn10_xmax_1_ymax_1_t_29_p_2_100_0_205.txt                                                                                                                                                         
+ Writing output to umesh_cn10_xmax_1_ymax_1_t_29_p_2_100_0_205.txt                                                                                                                                                         
+ Writing output to vmesh_cn10_xmax_1_ymax_1_t_29_p_2_100_0_205.txt                                                                                                                                                         

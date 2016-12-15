@@ -1,0 +1,11 @@
+#!/bin/bash -l
+
+overs=$(seq 100 5 200)
+
+for over in ${overs[@]}; do
+    ./py_plot $over
+done
+
+
+#gfortran -fcheck=all mech510_proj_v3b_template.f95
+#time ./a.out

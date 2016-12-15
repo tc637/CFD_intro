@@ -27,13 +27,13 @@ if __name__ == '__main__':
     plt.style.use('ggplot')
     
     timings = []
-    betas = np.arange(5,305,5)
+    overs = np.arange(100,210,5)
     meshsizes=[10]
     fs = 20.
     fw = "bold"
     
-    with open('betas.txt','r') as betafile:
-        for line in betafile:
+    with open('overs.txt','r') as overfile:
+        for line in overfile:
             line = line.split()
             
             if len(line) == 0:
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     vfiles = []
     
     
-    with open('betas.stderr','r') as stdfile:
+    with open('overs.stderr','r') as stdfile:
         for line in stdfile:
             line = line.split()
 
@@ -90,19 +90,19 @@ if __name__ == '__main__':
     
     ax2 = ax1.twinx()
 
-    ax1.plot(betas/100, iterations, '-b', label='Iteration Count')
-    ax2.plot(betas/100, timings, '-r', label='Time to Steady State')
+    ax1.plot(overs/100, iterations, '-b', label='Iteration Count')
+    ax2.plot(overs/100, timings, '-r', label='Time to Steady State')
     
-    ax1.set_xlabel(r'$\beta$', fontsize=fs+10, fontweight=fw)
+    ax1.set_xlabel(r'$\omega$', fontsize=fs+10, fontweight=fw)
     ax1.set_ylabel('Iteration Count', fontsize=fs, fontweight=fw, color='b')
     ax2.set_ylabel('Time', fontsize=fs, fontweight=fw, color='r')
     
-    ax1.set_title(r'Iteration Count and Run Time with Different $\beta$',fontsize=fs,fontweight=fw)
+    ax1.set_title(r'Iteration Count and Run Time with Different $\omega$',fontsize=fs,fontweight=fw)
     
     ax1.tick_params(axis='both',which='major',labelsize=20)
     ax2.tick_params(axis='both',which='major',labelsize=20)
     
-    fig_name = 'betas.png'
+    fig_name = 'overs.png'
     fig1.savefig(fig_name, dpi=100, facecolor='w', edgecolor='w',
         orientation='portrait', papertype=None, format=None,
         transparent=False, bbox_inches="tight", pad_inches=0.1,
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     print(itinds)
     print(timeinds)
     
-    file1 = pfiles[100/5-1]
+    file1 = pfiles[0]
     print(file1)
     
         
@@ -153,18 +153,17 @@ if __name__ == '__main__':
     cbar = plt.colorbar(contour_filled)
     ax3.set_xlabel('x', fontsize=fs, fontweight=fw)
     ax3.set_ylabel('y', fontsize=fs, fontweight=fw)
-    ax3.set_title(r'Contour Plot of the Steady-State Solution, $\beta$ = 1',fontsize=fs,fontweight=fw)
+    ax3.set_title(r'Contour Plot of the Steady-State Solution, $\omega$ = 1',fontsize=fs,fontweight=fw)
     ax3.tick_params(axis='both',which='major',labelsize=20)
     cbar.set_label(r'$P_{computed}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20)
     
-    fig_name = 'betas_ref.png'
+    fig_name = 'overs_ref.png'
     fig3.savefig(fig_name, dpi=100, facecolor='w', edgecolor='w',
         orientation='portrait', papertype=None, format=None,
         transparent=False, bbox_inches="tight", pad_inches=0.1,
         frameon=None)
-
-    
+ 
     ind = 0
     file1 = pfiles[itinds[0][ind]]
     print(file1)
@@ -196,12 +195,12 @@ if __name__ == '__main__':
     cbar = plt.colorbar(contour_filled)
     ax4.set_xlabel('x', fontsize=fs, fontweight=fw)
     ax4.set_ylabel('y', fontsize=fs, fontweight=fw)
-    ax4.set_title(r'Contour Plot of the Steady-State Solution, $\beta$ = {}'.format(betas[itinds[0][ind]]/100),fontsize=fs,fontweight=fw)
+    ax4.set_title(r'Contour Plot of the Steady-State Solution, $\omega$ = {}'.format(overs[itinds[0][ind]]/100),fontsize=fs,fontweight=fw)
     ax4.tick_params(axis='both',which='major',labelsize=20)
     cbar.set_label(r'$P_{computed}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20)
     
-    fig_name = 'betas_contour.png'
+    fig_name = 'overs_contour.png'
     fig4.savefig(fig_name, dpi=100, facecolor='w', edgecolor='w',
         orientation='portrait', papertype=None, format=None,
         transparent=False, bbox_inches="tight", pad_inches=0.1,

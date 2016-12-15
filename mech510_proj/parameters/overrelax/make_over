@@ -1,0 +1,23 @@
+#!/bin/bash -l
+
+overs=$(seq 100 5 205)
+tempfile=mech510_proj_v3c_template.f95
+runfile="mech510_proj_v3c.f95"
+
+rm overs*
+
+for over in ${overs[@]}; do
+    cp $tempfile $runfile
+    chmod 700 $runfile
+
+    sed -ie "s/OVER/$over/g" $runfile
+    echo $over   
+    gfortran -fcheck=all $runfile
+    echo $beta >> overs.txt
+    { time ./a.out >> overs.stderr ;  } 2>> overs.txt
+done
+
+./py_over.py
+
+#gfortran -fcheck=all mech510_proj_v3b_template.f95
+#time ./a.out
