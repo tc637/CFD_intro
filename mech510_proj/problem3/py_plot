@@ -1,0 +1,16 @@
+#!/bin/bash -l
+
+variable=$1
+dt=$2
+cp py_plot_temp.py py_plot.py
+
+filename=${variable}mesh_cn10_xmax_1_ymax_1_t*p_3_100_0_100.txt
+
+filename=$(ls $filename)
+
+echo $filename
+
+sed -ie s/FILE1/$filename/g py_plot.py
+sed -ie s/VAR/$variable/g py_plot.py
+sed -ie s/DT/$dt/g py_plot.py
+./py_plot.py

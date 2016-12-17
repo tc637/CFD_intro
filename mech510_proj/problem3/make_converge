@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#rm -f *.txt
+gfortran -fcheck=all mech510_proj_v4.f95
+time ./a.out 
+./py_converge.py
+./py_plot p 0.5
+./py_plot u 0.5
+./py_plot v 0.5

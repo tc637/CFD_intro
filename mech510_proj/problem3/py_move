@@ -1,0 +1,20 @@
+#!/bin/bash -l
+
+variable=$1
+dt=$2
+Tw=$3
+
+#rm -f *mesh*txt
+
+cp py_move_temp.py py_move.py
+
+filename=${variable}mesh_cn41_xmax_1_ymax_1_t*p_3_100_0_100_${Tw}.txt
+
+filename=$(ls $filename)
+
+echo $filename
+
+sed -ie s/FILE1/$filename/g py_move.py
+sed -ie s/VAR/$variable/g py_move.py
+sed -ie s/DT/$dt/g py_move.py
+./py_move.py
