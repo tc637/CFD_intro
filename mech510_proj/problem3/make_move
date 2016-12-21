@@ -1,6 +1,6 @@
 #!/bin/bash
 
 #rm *mesh*txt
-gfortran -fcheck=all mech510_proj_v4aa.f95
+gfortran -fcheck=all mech510_proj_v5.f95
 time ./a.out 
 

@@ -12,12 +12,11 @@ MODULE meshmod
     ! Declare variables to pass arround
 	
 	! Discretization parameters
-    INTEGER, PARAMETER :: imax = 10                           ! Size of mesh (x-direction)
-	INTEGER, PARAMETER :: jmax = 10                            ! Size of mesh (y-direction)
+    INTEGER, PARAMETER :: imax = 169                          ! Size of mesh (x-direction)
+
  
     REAL*8, PARAMETER  :: xmax = 1.0D+0                        ! Maximum x-position
-	REAL*8, PARAMETER  :: ymax = 1.0D+0                        ! Maximum y-position
-    REAL*8, PARAMETER  :: tmax = 40.0D+0                       ! Maximum time
+	REAL*8, PARAMETER  :: ymax = 3.0D+0                        ! Maximum y-position
 		
 	INTEGER, PARAMETER :: problem = 3                          ! 1 for FI/Jacobian tests (square domain), 2 for IE tests, 3 for real problem
 	
@@ -25,7 +24,7 @@ MODULE meshmod
 	REAL*8, PARAMETER  :: u0 = 1.0                             ! Constant for u(x,y) (test problems)
 	REAL*8, PARAMETER  :: v0 = 1.0                             ! Constant for v(x,y)
     REAL*8, PARAMETER  :: P0 = 1.0                             ! Constant for P(x,y)
-	REAL*8, PARAMETER  :: Re = 100.0                           ! Reynolds number (test data uses Re = 100 !!!)
+	REAL*8, PARAMETER  :: Re = 125.0                           ! Reynolds number (test data uses Re = 100 !!!)
     REAL*8, PARAMETER  :: beta = 1.0                           ! Parameter for artificial compressibility
     REAL*8, PARAMETER  :: apres = 0.0                          ! Parameter for pressure source term to handle oscillations
     
@@ -41,12 +40,12 @@ MODULE meshmod
     ! Values that do not need to be changed
     INTEGER            :: i,j,n                                ! Space and time indices
     REAL*8, PARAMETER  :: pi = 3.141592654D+0                  ! Value of pi
-    REAL*8, PARAMETER  :: dx = xmax/imax                       ! Cell sizes
-	REAL*8, PARAMETER  :: dy = ymax/jmax
+    REAL*8, PARAMETER  :: dx = xmax/imax, dy = xmax/imax       ! Cell sizes
+	INTEGER, PARAMETER  :: jmax = ymax/dy                      ! Size of mesh (y-direction)
 
     ! Time variables
-	REAL*8, PARAMETER   :: dt = 0.05                       ! Time step variable
-    REAL*8, PARAMETER   :: tol = 1.0D-10                      ! Tolerance for solution change before confirming steady-state
+	REAL*8, PARAMETER   :: dt = 0.2                         ! Time step variable
+    REAL*8, PARAMETER   :: tol = 1.0D-12                      ! Tolerance for solution change before confirming steady-state
     INTEGER             :: maxn                               ! Max time step (i.e. last n index)
 
 	
@@ -237,7 +236,7 @@ SUBROUTINE ie(tn)              ! Subroutine for time integration (IE); rows firs
     
     REAL*8                                :: tn            ! Time at index n
 
-    INTEGER, PARAMETER                    :: maxsize = 200 ! Max possible size of array
+    INTEGER, PARAMETER                    :: maxsize = 600 ! Max possible size of array
     	
 	REAL*8, DIMENSION(3,0:maxsize,0:maxsize) :: d_soltilda ! Interim dU (rows first) (3 X j X i)
 	
@@ -710,8 +709,8 @@ SUBROUTINE output_converge(oc)              ! Output convergence info for proble
             varind = ind   ! Variable index
             
             ! Set filename
-            WRITE(fnames(ind), fmt) "converg_",imax,"_xmax_",nint(xmax),"_ymax_",nint(ymax),"_dt_",nint(dt*100),"_p_",problem,"_", &
-                nint(beta*100),"_",nint(apres*100),"_",nint(over*100),"_",nint(Tw*100),"_",varind,".txt"
+            WRITE(fnames(ind), fmt) "converg_",imax,"_xmax_",nint(xmax),"_ymax_",nint(ymax*10),"_dt_",nint(dt*100), &
+            "_p_",problem,"_",nint(beta*100),"_",nint(apres*100),"_",nint(over*100),"_",nint(Tw*100),"_",varind,".txt"
             
             ! Open and write to file
             OPEN(UNIT=11*ind, FILE=fnames(ind), STATUS="REPLACE", IOSTAT=ierror)
@@ -750,27 +749,27 @@ SUBROUTINE output_mesh(tn) ! Output final solutions for plotting
     fmt = "(A8,I0,A6,I0,A6,I0,A3,I0,A3,I0,A1,I0,A1,I0,A1,I0,A1,I0,A4)"
 
     ! Set filenames (pressure)
-    WRITE(fname, fmt) "pmesh_cn",imax,"_xmax_",nint(xmax),"_ymax_",nint(ymax),"_t_",nint(tn),"_p_",problem,"_", &
+    WRITE(fname, fmt) "pmesh_cn",imax,"_xmax_",nint(xmax),"_ymax_",nint(ymax*10),"_t_",nint(tn),"_p_",problem,"_", &
        nint(beta*100),"_",nint(apres*100),"_",nint(over*100),"_",nint(Tw*100),".txt"
     WRITE(*,*) "Writing output to ", fname
     OPEN(UNIT=90, FILE=fname,STATUS="REPLACE", IOSTAT=ierror)
     
    ! Set filenames (u velocity)
-    WRITE(fname, fmt) "umesh_cn",imax,"_xmax_",nint(xmax),"_ymax_",nint(ymax),"_t_",nint(tn),"_p_",problem,"_", &
+    WRITE(fname, fmt) "umesh_cn",imax,"_xmax_",nint(xmax),"_ymax_",nint(ymax*10),"_t_",nint(tn),"_p_",problem,"_", &
        nint(beta*100),"_",nint(apres*100),"_",nint(over*100),"_",nint(Tw*100),".txt"
     WRITE(*,*) "Writing output to ", fname
     OPEN(UNIT=91, FILE=fname,STATUS="REPLACE", IOSTAT=ierror)
     
    ! Set filenames (v velocity)
-    WRITE(fname, fmt) "vmesh_cn",imax,"_xmax_",nint(xmax),"_ymax_",nint(ymax),"_t_",nint(tn),"_p_",problem,"_", &
+    WRITE(fname, fmt) "vmesh_cn",imax,"_xmax_",nint(xmax),"_ymax_",nint(ymax*10),"_t_",nint(tn),"_p_",problem,"_", &
        nint(beta*100),"_",nint(apres*100),"_",nint(over*100),"_",nint(Tw*100),".txt"
     WRITE(*,*) "Writing output to ", fname
     OPEN(UNIT=92, FILE=fname,STATUS="REPLACE", IOSTAT=ierror)
 
    DO j=1,jmax   ! Loop over each row
-        WRITE(90,"(999F20.15)") (solmesh_n(j,i,1), i=1,imax)     ! Implied loop to write out every column
-        WRITE(91,"(999F20.15)") (solmesh_n(j,i,2), i=1,imax)     ! Implied loop to write out every column
-        WRITE(92,"(999F20.15)") (solmesh_n(j,i,3), i=1,imax)     ! Implied loop to write out every column 
+        WRITE(90,"(2000F30.25)") (solmesh_n(j,i,1), i=1,imax)     ! Implied loop to write out every column
+        WRITE(91,"(2000F30.25)") (solmesh_n(j,i,2), i=1,imax)     ! Implied loop to write out every column
+        WRITE(92,"(2000F30.25)") (solmesh_n(j,i,3), i=1,imax)     ! Implied loop to write out every column 
    ENDDO
 
    CLOSE(UNIT=90)

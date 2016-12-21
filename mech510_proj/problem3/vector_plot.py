@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
+import scipy.ndimage
 
 import sys
 
@@ -23,7 +24,7 @@ if __name__ == '__main__':
     argus = sys.argv
     
     if len(sys.argv) < 10:
-        print("meshsize,ymax,tlength,beta,apres,omega,Tw,dt")
+        print("meshsize,ymax,tlength,beta,apres,omega,Tw,dt,tol")
         exit()
     
     meshsize = int(sys.argv[1])
@@ -48,12 +49,6 @@ if __name__ == '__main__':
     ufilename = "umesh_cn"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_t_"+str(tmax)+"_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+".txt"
     vfilename = "vmesh_cn"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_t_"+str(tmax)+"_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+".txt"
     pfilename = "pmesh_cn"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_t_"+str(tmax)+"_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+".txt"
-    
-    cols = np.linspace(0,1,meshsize+1)
-    rows = np.linspace(0,1,meshsize+1)
-    
-    cols_plot = (cols + np.diff(cols)[0]/2)[:-1]
-    rows_plot = -(rows + np.diff(rows)[0]/2)[:-1]
 
     uarray = []
     varray = []
@@ -78,26 +73,60 @@ if __name__ == '__main__':
     
     parray = np.flipud(np.array(parray))
     
-    
+    filt = 1
     # Pressure and velocity plot
+    speed = scipy.ndimage.zoom(speed,filt)
+    uarray = scipy.ndimage.zoom(uarray,filt)
+    varray = scipy.ndimage.zoom(varray,filt)
+    
+    imax = meshsize
+    dx = dy = 1./imax
+    
+    jmax = (ymax/10)/dy
+    
+    cols = np.linspace(0,1,imax*filt+1)
+    rows = np.linspace(0,ymax/10,jmax*filt+1)
+    
+    
+    cols_plot = (cols + np.diff(cols)[0]/2)[:-1]
+    rows_plot = -(rows + np.diff(rows)[0]/2)[:-1]
+
+
     fig1,ax1 = plt.subplots(1,1,figsize=(16,12))
-    levels = np.linspace(np.min(parray),np.max(parray),80)
-    CS = ax1.contour(cols_plot, rows_plot, parray, levels, colors='w',linestyles='dashed')
+    levels = np.linspace(np.min(speed),np.max(speed),80)
+    #CS = ax1.contour(cols_plot, rows_plot, parray, levels, colors='w',linestyles='dashed')
     #ax1.clabel(CS, colors='k', fmt='%6.4f', fontsize=16)
-    contour_filled = ax1.contourf(cols_plot, rows_plot, parray, levels)
-    cbar = plt.colorbar(contour_filled)
+    #contour_filled = ax1.contourf(cols_plot, rows_plot, parray, levels)
+    #CS = ax1.contour(cols_plot, rows_plot, speed, levels, colors='w',linestyles='dashed')
+    #ax1.clabel(CS, colors='k', fmt='%6.4f', fontsize=16)
+    #contour_filled = ax1.contourf(cols_plot, rows_plot, speed, levels)
+    #cbar = plt.colorbar(contour_filled)
     ax1.set_xlabel('x', fontsize=fs, fontweight=fw)
     ax1.set_ylabel('y', fontsize=fs, fontweight=fw)
-    ax1.set_title(r'Steady-State Pressure Contours and Velocity Streamlines, Tw = {}, dt = {}'.format(Tw,dt),fontsize=fs,fontweight=fw)
+    ax1.set_title(r'Steady-State Velocity Streamlines and Speeds, Tw = {}, dt = {}, Meshsize = {} X {}'.format(Tw,dt,imax,int(jmax)),fontsize=fs,fontweight=fw)
     ax1.tick_params(axis='both',which='major',labelsize=20)
-    cbar.set_label(r'$P_{computed}$',size=fs+5)
-    cbar.ax.tick_params(labelsize=20)
+    #cbar.set_label(r'$P_{computed}$',size=fs+5)
+    #cbar.ax.tick_params(labelsize=20)
     
+    cols = np.linspace(0,1,imax*filt+1)
+    rows = np.linspace(0,ymax/10,jmax*filt+1)
+
+
+    cols_plot = (cols + np.diff(cols)[0]/2)[:-1]
+    rows_plot = -(rows + np.diff(rows)[0]/2)[:-1]
+    
+    #domain = 5*len(speed)/6
+    domain = 0
     X, Y = np.meshgrid(cols_plot,rows_plot)
-    lw = 10*speed/speed.max() 
-    Q = ax1.streamplot(X,Y,uarray,varray,color='k',linewidth=lw,zorder=5)
+    lw = speed[domain:,:]/speed.max()
     
-    figname = "pcontour_velocities_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
+    print(np.shape(lw))
+    plt.streamplot(X[domain:,:],Y[domain:,:],uarray[domain:,:],varray[domain:,:],color=lw,cmap=cm.jet,density=5,zorder=5)
+    cbar = plt.colorbar()
+    cbar.set_label(r'Speed',size=fs)
+    cbar.ax.tick_params(labelsize=20)
+    print(meshsize)
+    figname = "pcontour_velocities_{}_{}_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize,domain)
     savefigure(figname,fig1)
     
     # ===========================
@@ -116,7 +145,7 @@ if __name__ == '__main__':
     cbar.set_label(r'$u_{computed}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20)
     
-    figname = "ucontour_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
+    figname = "ucontour_{}_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
     savefigure(figname,fig2)
     
     # ===========================
@@ -135,7 +164,7 @@ if __name__ == '__main__':
     cbar.set_label(r'$v_{computed}$',size=fs+5)
     cbar.ax.tick_params(labelsize=20)
     
-    figname = "vcontour_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
+    figname = "vcontour_{}_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
     savefigure(figname,fig3)
     
     # ===========================
@@ -150,14 +179,14 @@ if __name__ == '__main__':
     ax4.tick_params(axis='both',which='major',labelsize=20)
     
     
-    figname = "uslice_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
+    figname = "uslice_{}_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
     savefigure(figname,fig4)
     
     # ===========================
     
-    ufilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"1"+".txt"
-    vfilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"2"+".txt"
-    pfilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"3"+".txt"
+    ufilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"1"+".txt"
+    vfilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"2"+".txt"
+    pfilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"3"+".txt"
     
     uconv= []
     vconv = []
@@ -190,7 +219,7 @@ if __name__ == '__main__':
     ax5.tick_params(axis='both',which='major',labelsize=20)
     ax5.legend(fontsize=fs)
     
-    figname = "converge_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
+    figname = "converge_{}_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize)
     savefigure(figname,fig5)
             
     plt.show()
