@@ -70,9 +70,9 @@ if __name__ == '__main__':
     cbar = plt.colorbar(contour_filled)
     ax2.set_xlabel('x', fontsize=fs, fontweight=fw)
     ax2.set_ylabel('y', fontsize=fs, fontweight=fw)
-    ax2.set_title(r'u(x,y) with Tw = 1 Plus u(1-x,y) with Tw = -1',fontsize=fs,fontweight=fw)
+    ax2.set_title(r'u(x,y) with Tw = 100 Plus u(1-x,y) with Tw = -100',fontsize=fs,fontweight=fw)
     ax2.tick_params(axis='both',which='major',labelsize=20)
-    cbar.set_label(r'u(x,y,T$_w$ = 1) + u(1-x,y,T$_w$ = -1)',size=fs+5)
+    cbar.set_label(r'u(x,y,T$_w$ = 100) + u(1-x,y,T$_w$ = -100)',size=fs+5)
     cbar.ax.tick_params(labelsize=20)
     
     figname="diff_u.png"

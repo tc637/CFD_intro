@@ -180,8 +180,7 @@ if __name__ == '__main__':
     cbar.set_label(r'Speed',size=fs)
     cbar.ax.tick_params(labelsize=20)
     print(meshsize)
-    #figname = "pcontour_velocities_{}_{}_{}_{}_{}_{}_{}_{}_{}_{}.png".format(pcontour_velocities_{}_{}_{}_{}_{}_{}_{}_{}_{}_{}.png)
-    #savefigure(figname,fig1)
+
     
     dx = dy = 1./meshsize
     
@@ -291,6 +290,9 @@ if __name__ == '__main__':
         outfile.write(str(cols_plot[maxind[1]][0])+"\n")
         outfile.write(str(rows_plot[maxind[0]][0])+"\n")
         outfile.write(str(np.max(sarray_plot2)))
+        
+    figname = "pcontour_velocities_{}_{}_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize,domain)
+    savefigure(figname,fig1)
         
     #plt.show()
     

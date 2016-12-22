@@ -12,7 +12,7 @@ MODULE meshmod
     ! Declare variables to pass arround
 	
 	! Discretization parameters
-    INTEGER, PARAMETER :: imax = 20                          ! Size of mesh (x-direction)
+    INTEGER, PARAMETER :: imax = 20                            ! Size of mesh (x-direction)
 
  
     REAL*8, PARAMETER  :: xmax = 1.0D+0                        ! Maximum x-position
@@ -26,9 +26,9 @@ MODULE meshmod
     REAL*8, PARAMETER  :: P0 = 1.0                             ! Constant for P(x,y)
 	REAL*8, PARAMETER  :: Re = 100.0                           ! Reynolds number (test data uses Re = 100 !!!)
     REAL*8, PARAMETER  :: beta = 1.0                           ! Parameter for artificial compressibility
-    REAL*8, PARAMETER  :: apres = 0.0                          ! Parameter for pressure source term to handle oscillations
+    REAL*8, PARAMETER  :: apres = 0.0                          ! Parameter for pressure source term to handle oscillations 
     
-    REAL*8, PARAMETER  :: Tw = -1.0                             ! Top wall velocity
+    REAL*8, PARAMETER  :: Tw = -1.0                            ! Top wall velocity
     
     REAL*8, PARAMETER  :: over = 1.0                           ! Overrelaxation parameter
     
@@ -44,9 +44,8 @@ MODULE meshmod
 	INTEGER, PARAMETER  :: jmax = ymax/dy                      ! Size of mesh (y-direction)
 
     ! Time variables
-	REAL*8, PARAMETER   :: dt = 0.05                         ! Time step variable
-    REAL*8, PARAMETER   :: tol = 1.0D-6                      ! Tolerance for solution change before confirming steady-state
-    INTEGER             :: maxn                               ! Max time step (i.e. last n index)
+	REAL*8, PARAMETER   :: dt = 0.05                           ! Time step variable
+    REAL*8, PARAMETER   :: tol = 1.0D-6                        ! Tolerance for solution change before confirming steady-state
 
 	
     REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)      :: solmesh_n   ! Mesh of solutions at n; includes ghost cells (3rd dim: 1 = p, 2 = u, 3 = v)
@@ -65,32 +64,35 @@ END MODULE meshmod
 ! Subroutines
 !--------------
 
-!!! Initialization subroutines !!!
+!!! Main integration subroutines !!!
 ! init_mesh (Mesh initialization of initial conditions and sources)
-! init_mesh_test (Apply test initial conditions)
-! init_mesh_channel (Apply real initial conditions)
-! init_source (Calculate source terms)
-
-!!! Integration subroutines !!!
-! set_bcs (update boundary conditions)
-! rk2 (RK2 integrator)
+! set_bcs (Update boundary conditions)
+! calc_integrals (Flux integral and Jacobian calculator)
 ! ie (IE integrator)
+! reach_ss (check if solution has reached steady-state given by tol)
 ! set_lhs (For IE approximate factorization)
-! calc_integrals (Flux integral calculator)
-! Thomas (Thomas algorithm for IE)
+
 
 !!! Output subroutines !!!
-! output_integrals (output flux integrals and sources for testing)
-! output_Tmesh (output solutions)
+! output_integrals (output flux integrals for testing)
+! output_converge (output convergence info)
+! output_mesh (output solutions)
 
 
-! Functions
-! ----------
+!!! Testing subroutines !!!
+! calc_analytic (calculate analytic flux integrals)
+! test_jacobian (output Jacobian test results)
 
-! flux (compute flux at faces)
-! source (compute source terms)
-! analytic (compute analytic fluxes for testing) 
-! source_analytic (compute analytic sources for testing)
+
+!!! Helper subroutines !!!
+! update_trig (update trig factors for mesh initialization and analytic calculations)
+! calc_fflux (flux calculator for F)
+! calc_gflux (flux calculator for G)
+! calc_fjacob (Jacobian calculator for F)
+! calc_gjacob (Jacobian calculator for G)
+
+! Block Thomas Algorithm Subroutines (written by COG)
+
 
 ! =================== main program =========================
 
@@ -105,24 +107,21 @@ PROGRAM mech510_proj
 	
     ! Test flux integrals and Jacobian calculations
     IF (problem == 1) THEN
-        CALL calc_integrals(solmesh_n, FI_n, jacobs_n)
-        CALL output_integrals
-        CALL test_jacobian
+        CALL calc_integrals(solmesh_n, FI_n, jacobs_n) ! Calculate flux integrals and Jacobians
+        CALL output_integrals                          ! Output FIs
+        CALL test_jacobian                             ! Output Jacobian error statistics
      
     ! Stationary walls tests  
     ELSE IF (problem == 2) THEN
-        CALL set_bcs(solmesh_n)
-        CALL ie(tn)
-        CALL output_mesh(tn)
+        CALL set_bcs(solmesh_n) ! Set boundary conditions
+        CALL ie(tn)             ! Integrate
+        CALL output_mesh(tn)    ! Output final mesh
     
-    ! Moving top wall problem   
+    ! Moving top wall problem (output convergence info)   
     ELSE
-        
         CALL set_bcs(solmesh_n)
-        !CALL output_mesh(tn)
         CALL ie(tn)
         CALL output_mesh(tn)
-        
     END IF
     
 END PROGRAM mech510_proj
@@ -130,7 +129,9 @@ END PROGRAM mech510_proj
 
 ! =================== subroutines =========================
 
-SUBROUTINE init_mesh ! Initialize mesh with centroid values of p(x,y,0), u(x,y,0), v(x,y,0) f
+!!! Main integration subroutines !!!
+
+SUBROUTINE init_mesh ! Initialize mesh with centroid values of p(x,y,0), u(x,y,0), v(x,y,0) 
 	
 	USE meshmod
     IMPLICIT NONE
@@ -199,37 +200,94 @@ SUBROUTINE set_bcs(solmesh)  ! Subroutine to set ghost cells to enforce boundary
         solmesh(jmax+1,i,2) = 2.0*Tw-solmesh(jmax,i,2) ! u (Dirichlet); Tw = 0 if stationary
         solmesh(jmax+1,i,3) = -solmesh(jmax,i,3) ! v (Dirchlet)
         
-       
 
     END DO
 
-END SUBROUTINE set_bcs    
+END SUBROUTINE set_bcs
+
 ! =======================
 
-SUBROUTINE update_trig(xpos,ypos) ! Subroutine to update trig factors
-	
-	USE meshmod
+SUBROUTINE calc_integrals(solmesh,FI,jacobs)  ! Subroutine to evaluate flux integrals and Jacobians at time level n
+
+    USE meshmod
     IMPLICIT NONE
-	
-	REAL*8 :: xpos,ypos   ! Positions of cell centroids
-	
-    Cx = cos(pi*xpos)
-    Sx = sin(pi*xpos)
     
-    Cy = cos(pi*ypos)
-    Sy = sin(pi*ypos)
-    
-    C2x = cos(2.*pi*xpos)
-    S2x = sin(2.*pi*xpos)
-    
-    C2y = cos(2.*pi*ypos)
-    S2y = sin(2.*pi*ypos)
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)       :: solmesh      ! Mesh at time level n (could be interim mesh)
+	REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)       :: FI           ! Flux integral at time level n (could be interim mesh)
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3,3,6)   :: jacobs       ! Scaled Jacobians at time level n and position i,j (Ax,Bx,Cx,Ay,By,Cy)
 	
-END SUBROUTINE update_trig
+	REAL*8, DIMENSION(3)                         :: fluxa, fluxb ! Fluxes at left, right (bottom, top) faces of CV (P, u, v)
+    REAL*8, DIMENSION(3)                         :: fflux, gflux ! Flux integrals along x- and y-directions (P, u, v)
+    
+    ! Jacobian matrices (for F and G)
+    REAL*8, DIMENSION(3,3)                       :: jacobpa,jacobpb,jacobma,jacobmb ! (dF_i+0.5/dU_i,dF_i+0.5/dU_i+1,dF_i-0.5/dU_i-1,dF_i-0.5/dU_i)
+    
+    REAL*8                                       :: xpos,ypos                       ! Positions of cell centroids
+
+
+	! Calculate flux integral, i.e. (right face) - (left face)
+    DO j = 1,jmax      ! Loop over rows (interior CVs)
+    
+        ypos = (j - 1./2.)*dy     ! Centroid
+		
+		DO i = 1,imax  ! Loop over columns (interior CVs)
+        
+            xpos = (i - 1./2.)*dx ! Centroid
+            
+            ! ------ Handle flux integrals ------
+            
+            ! Calculate fluxes in x-direction
+            CALL calc_fflux(i,i+1,solmesh,fluxb)
+            CALL calc_fflux(i-1,i,solmesh,fluxa)
+            
+            ! "F" flux integral
+            fflux = (fluxb-fluxa)/dx
+            
+            ! Calculate fluxes in y-direction
+            CALL calc_gflux(j,j+1,solmesh,fluxb)
+            CALL calc_gflux(j-1,j,solmesh,fluxa)
+            
+            ! "G" flux integral
+            gflux = (fluxb-fluxa)/dy
+            
+            ! Sum directional integrals and switch signs
+            FI(j,i,:) = -(fflux + gflux)
+            
+            ! ------ Handle Jacobians ------
+        
+            ! Calculate F Jacobians
+            CALL calc_fjacob(i,i+1,solmesh,jacobpa,jacobpb)  ! Indices i+0.5 (i,i+1)
+            CALL calc_fjacob(i-1,i,solmesh,jacobma,jacobmb)  ! Indices i-0.5 (i-1,i)
+            
+            jacobs(j,i,:,:,1) = -1./dx*(jacobma)                 ! Ax
+            jacobs(j,i,:,:,2) = 1./dx*(jacobpa - jacobmb)        ! Bx
+            jacobs(j,i,:,:,3) = 1./dx*(jacobpb)                  ! Cx
+            
+            
+            ! Calculate G Jacobians
+            CALL calc_gjacob(j,j+1,solmesh,jacobpa,jacobpb)  ! Indices j+0.5 (j,j+1)
+            CALL calc_gjacob(j-1,j,solmesh,jacobma,jacobmb)  ! Indices j-0.5 (j-1,j)
+            
+            jacobs(j,i,:,:,4) = -1./dy*(jacobma)                 ! Ay
+            jacobs(j,i,:,:,5) = 1./dy*(jacobpa - jacobmb)        ! By
+            jacobs(j,i,:,:,6) = 1./dy*(jacobpb)                  ! Cy
+            
+            ! For FI validation
+            IF (problem == 1) THEN  
+                ! Calculate analytic flux integral at CV centroids
+                CALL calc_analytic(xpos,ypos)
+                
+            END IF
+            
+		END DO
+        
+	END DO
+    
+END SUBROUTINE calc_integrals
 
 ! =======================
 
-SUBROUTINE ie(tn)              ! Subroutine for time integration (IE); rows first
+SUBROUTINE ie(tn)       ! Subroutine for time integration (IE); rows first
 
     USE meshmod
     IMPLICIT NONE
@@ -246,25 +304,23 @@ SUBROUTINE ie(tn)              ! Subroutine for time integration (IE); rows firs
 	REAL*8, DIMENSION(3,3,3,0:maxsize)      :: lhsy        ! LHS of second equation in approx fact
     INTEGER                                 :: iss         ! is steady state? (determine from tolerance; 0 = No, 1 = Yes)
 	
-	n = 0
-    iss = 0
+	n = 0     ! Initialize time index
+    iss = 0   ! Not converged yet
     
     IF (problem == 3) THEN
         CALL output_converge(1)
     END IF
     
-	DO WHILE (iss == 0)  ! Want to obtain solution at maxn, hence last loop is maxn-1
+	DO WHILE (iss == 0)  ! Want to obtain solution at convergence (iss == 1)
         
         ! ------Calculate T(1)------
         n = n + 1
         
-        tn = dt*n                       ! Current time
+        tn = dt*n                ! Current time
         
         CALL set_bcs(solmesh_n)                             ! Update boundary conditions of solution mesh
         CALL calc_integrals(solmesh_n, FI_n, jacobs_n)      ! Calculate flux integrals
 		
-        !WRITE(*,*) "t = ", tn
-        
         
         ! Go across columns from row to row; first part of approx factorization
         DO j = 1,jmax
@@ -323,9 +379,10 @@ SUBROUTINE ie(tn)              ! Subroutine for time integration (IE); rows firs
     
     
     IF (problem == 3) THEN
-        CALL output_converge(2)
+        CALL output_converge(2) ! Output convergence info for Problem 3
     END IF
     
+    ! Output iteration info
     WRITE(*,*) "Beta = ",beta," A = ",apres,"Over = ",over
     WRITE(*,*) "Iteration took ", n, " time steps to reach steady-state." 
 	WRITE(*,*)
@@ -350,7 +407,7 @@ SUBROUTINE reach_ss(iss) ! Subroutine to check if solution has converged to stea
         l2du = (sum(d_solmesh(:,:,2)**2)/(float(imax)*float(jmax)))**(1./2.)
         l2dv = (sum(d_solmesh(:,:,3)**2)/(float(imax)*float(jmax)))**(1./2.)
         
-        
+        ! Write to convergence info files
         WRITE(11*1,"(999F20.18)") l2dP
         WRITE(11*2,"(999F20.18)") l2du
         WRITE(11*3,"(999F20.18)") l2dv
@@ -461,173 +518,10 @@ SUBROUTINE set_lhs(lhs,nd,vsize,maxsize,dir)     ! Initialize LHS for approximat
     END DO
     
 END SUBROUTINE set_lhs
-! =======================
-
-SUBROUTINE calc_integrals(solmesh,FI,jacobs)  ! Subroutine to evaluate flux integrals and Jacobians at time level n
-
-    USE meshmod
-    IMPLICIT NONE
-    
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)       :: solmesh      ! Mesh at time level n (could be interim mesh)
-	REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)       :: FI           ! Flux integral at time level n (could be interim mesh)
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3,3,6)   :: jacobs       ! Scaled Jacobians at time level n and position i,j (Ax,Bx,Cx,Ay,By,Cy)
-	
-	REAL*8, DIMENSION(3)                   :: fluxa, fluxb ! Fluxes at left, right (bottom, top) faces of CV (P, u, v)
-    REAL*8, DIMENSION(3)                   :: fflux, gflux ! Flux integrals along x- and y-directions (P, u, v)
-    
-    ! Jacobian matrices (for F and G)
-    REAL*8, DIMENSION(3,3)                 :: jacobpa,jacobpb,jacobma,jacobmb ! (dF_i+0.5/dU_i,dF_i+0.5/dU_i+1,dF_i-0.5/dU_i-1,dF_i-0.5/dU_i)
-    
-    REAL*8                                 :: xpos,ypos    ! Positions of cell centroids
-
-
-	! Calculate flux integral, i.e. (right face) - (left face)
-    DO j = 1,jmax      ! Loop over rows (interior CVs)
-    
-        ypos = (j - 1./2.)*dy     ! Centroid
-		
-		DO i = 1,imax  ! Loop over columns (interior CVs)
-        
-            xpos = (i - 1./2.)*dx ! Centroid
-            
-            ! ------ Handle flux integrals ------
-            
-            ! Calculate fluxes in x-direction
-            CALL calc_fflux(i,i+1,solmesh,fluxb)
-            CALL calc_fflux(i-1,i,solmesh,fluxa)
-            
-            ! "F" flux integral
-            fflux = (fluxb-fluxa)/dx
-            
-            ! Calculate fluxes in y-direction
-            CALL calc_gflux(j,j+1,solmesh,fluxb)
-            CALL calc_gflux(j-1,j,solmesh,fluxa)
-            
-            ! "G" flux integral
-            gflux = (fluxb-fluxa)/dy
-            
-            ! Sum directional integrals and switch signs
-            FI(j,i,:) = -(fflux + gflux)
-            
-            ! ------ Handle Jacobians ------
-        
-            ! Calculate F Jacobians
-            CALL calc_fjacob(i,i+1,solmesh,jacobpa,jacobpb)  ! Indices i+0.5 (i,i+1)
-            CALL calc_fjacob(i-1,i,solmesh,jacobma,jacobmb)  ! Indices i-0.5 (i-1,i)
-            
-            jacobs(j,i,:,:,1) = -1./dx*(jacobma)                 ! Ax
-            jacobs(j,i,:,:,2) = 1./dx*(jacobpa - jacobmb)        ! Bx
-            jacobs(j,i,:,:,3) = 1./dx*(jacobpb)                  ! Cx
-            
-            
-            ! Calculate G Jacobians
-            CALL calc_gjacob(j,j+1,solmesh,jacobpa,jacobpb)  ! Indices j+0.5 (j,j+1)
-            CALL calc_gjacob(j-1,j,solmesh,jacobma,jacobmb)  ! Indices j-0.5 (j-1,j)
-            
-            jacobs(j,i,:,:,4) = -1./dy*(jacobma)                 ! Ay
-            jacobs(j,i,:,:,5) = 1./dy*(jacobpa - jacobmb)        ! By
-            jacobs(j,i,:,:,6) = 1./dy*(jacobpb)                  ! Cy
-            
-            ! For FI validation
-            IF (problem == 1) THEN  
-                ! Calculate analytic flux integral at CV centroids
-                CALL calc_analytic(xpos,ypos)
-                
-            END IF
-            
-		END DO
-        
-	END DO
-    
-END SUBROUTINE calc_integrals
 
 ! =======================
 
-
-SUBROUTINE calc_fflux(iinda,iindb,solmesh,flux)    ! Subroutine to calculate x-direction fluxes at a face
-
-    USE meshmod
-    IMPLICIT NONE
-    
-    INTEGER                                :: iinda, iindb     ! Indices of CVs adjacent to face along x-direction
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3) :: solmesh          ! Mesh at time level n (could be interim mesh)
-    REAL*8, DIMENSION(3)                   :: flux             ! Flux at face (P, u, v)                      
-
-    ! P-flux along x-direction
-    flux(1) = (solmesh(j,iindb,2)+solmesh(j,iinda,2))/(2.*beta)
-    
-    ! u-flux along x-direction
-    flux(2) = (((solmesh(j,iindb,2)+solmesh(j,iinda,2))/2.)**2 + (solmesh(j,iindb,1)+solmesh(j,iinda,1))/2. &
-                -1./Re*((solmesh(j,iindb,2)-solmesh(j,iinda,2))/dx))
-                
-    ! v-flux along x-direction
-    flux(3) = (((solmesh(j,iindb,2)+solmesh(j,iinda,2))/2.)*((solmesh(j,iindb,3)+solmesh(j,iinda,3))/2.) &
-               -1./Re*((solmesh(j,iindb,3)-solmesh(j,iinda,3))/dx))
-
-END SUBROUTINE calc_fflux
-
-! =======================
-
-
-SUBROUTINE calc_gflux(jinda,jindb,solmesh,flux)    ! Subroutine to calculate y-direction fluxes at a face
-
-    USE meshmod
-    IMPLICIT NONE
-    
-    INTEGER                                :: jinda, jindb    ! Indices of CVs adjacent to face along y-direction
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3) :: solmesh         ! Mesh at time level n (could be interim mesh)
-    REAL*8, DIMENSION(3)                   :: flux            ! Flux at face (P, u, v)                          
-
-    ! P-flux along y-direction
-    flux(1) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/(2.*beta)
-    
-    ! u-flux along y-direction
-    flux(2) = (((solmesh(jindb,i,2)+solmesh(jinda,i,2))/2.)*((solmesh(jindb,i,3)+solmesh(jinda,i,3))/2.) &
-           -1./Re*((solmesh(jindb,i,2)-solmesh(jinda,i,2))/dy))
-      
-    ! v-flux along y-direction
-    flux(3) = (((solmesh(jindb,i,3)+solmesh(jinda,i,3))/2.)**2 + (solmesh(jindb,i,1)+solmesh(jinda,i,1))/2. &
-            -1./Re*((solmesh(jindb,i,3)-solmesh(jinda,i,3))/dy))
-
-END SUBROUTINE calc_gflux
-
-! =======================
-
-SUBROUTINE calc_analytic(xpos, ypos)    ! Function to calculate analytic flux integral at a CV centroid
-
-    USE meshmod
-    IMPLICIT NONE
-
-    REAL*8   :: xpos,ypos                     ! Position of the cell centre
-	REAL*8   :: t1,t2,t3,t4,t5,t6,t7,t8,t9    ! Terms in the flux integral (across all 3 components)
-
-    ! Update trig factors
-    CALL update_trig(xpos, ypos)
-    
-    ! Compute analytic flux integral for P
-	t1 = -pi/beta*(u0*Cx*S2y + v0*S2x*Cy)
-    
-    FI_ana(j,i,1) = t1
-    
-    ! Compute analytic flux integral for u
-    t2 = P0*pi*Sx*Cy
-    t3 = -u0**2*pi*S2x*S2y**2
-    t4 = -u0*v0*pi*Sx*S2x*(Cy*S2y + 2.*C2y*Sy)
-    t5 = -u0*(5.*(pi**2)*Sx*S2y/Re)
-    
-    FI_ana(j,i,2) = t2 + t3 + t4 + t5
-    
-    ! Compute analytic flux integral for v
-    t6 = P0*pi*Cx*Sy
-    t7 = -v0**2*pi*(S2x**2)*S2y
-    t8 = -u0*v0*pi*Sy*S2y*(Cx*S2x + 2.*C2x*Sx)
-    t9 = -v0*(5.*(pi**2)*S2x*Sy/Re)
-
-    FI_ana(j,i,3) = t6 + t7 + t8 + t9
-
-END SUBROUTINE calc_analytic
-
-! =======================
+!!! Output subroutines !!!
 
 SUBROUTINE output_integrals ! Output computed and analytic flux integrals for testing
     
@@ -682,11 +576,9 @@ SUBROUTINE output_integrals ! Output computed and analytic flux integrals for te
 
 END SUBROUTINE output_integrals
 
-
-
 ! =======================
 
-SUBROUTINE output_converge(oc)              ! Output convergence info for problem 3
+SUBROUTINE output_converge(oc)                  ! Output convergence info for problem 3
     
     USE meshmod
     IMPLICIT NONE
@@ -699,10 +591,8 @@ SUBROUTINE output_converge(oc)              ! Output convergence info for proble
         
 	! Set filename format
 	fmt = "(A8,I0,A6,I0,A6,I0,A4,I0A3,I0,A1,I0,A1,I0,A1,I0,A1,I0,A1,I0,A4)" 
-
-
     
-    IF (oc == 1) THEN
+    IF (oc == 1) THEN ! For opening
         DO ind = 1,3
             
             ! Output analytic flux integrals
@@ -720,7 +610,7 @@ SUBROUTINE output_converge(oc)              ! Output convergence info for proble
              
         END DO
         
-    ELSE
+    ELSE   ! For closing
         DO ind = 1,3
         
             ! Close file
@@ -780,70 +670,43 @@ END SUBROUTINE output_mesh
 
 ! =======================
 
-SUBROUTINE calc_fjacob(iinda, iindb, solmesh, fui, fuip1) ! Subroutine to compute F Jacobians
-    
+!!! Testing subroutines !!!
+
+SUBROUTINE calc_analytic(xpos, ypos)          ! Subroutine to calculate analytic flux integral at a CV centroid
+
     USE meshmod
     IMPLICIT NONE
-    
-    INTEGER                                  :: iinda, iindb     ! Indices of CVs adjacent to face along x-direction
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)   :: solmesh          ! Mesh at time level n (could be interim mesh)
-    REAL*8, DIMENSION(3,3)                   :: fui, fuip1       ! dF/dU_i,j, dF/dU_i+1,j                  
 
-    ! Initialize Jacobians with 0s
-    fui = 0.0D+0
-    fuip1 = 0.0D+0
-    
-    ! Compute non-zero derivatives for dF/dU_i,j
-    fui(1,2) = 1./(2.*beta)
-    fui(2,1) = 1./2.
-    fui(2,2) = (solmesh(j,iindb,2) + solmesh(j,iinda,2))/2. + 1./(Re*dx)
-    fui(3,2) = (solmesh(j,iindb,3) + solmesh(j,iinda,3))/4.
-    fui(3,3) = (solmesh(j,iindb,2) + solmesh(j,iinda,2))/4. + 1./(Re*dx)
-    
-    ! Compute non-zero derivatives for dF/dU_i+1,j
-    fuip1(1,2) = 1./(2.*beta)
-    fuip1(2,1) = 1./2.
-    fuip1(2,2) = (solmesh(j,iindb,2) + solmesh(j,iinda,2))/2. - 1./(Re*dx)
-    fuip1(3,2) = (solmesh(j,iindb,3) + solmesh(j,iinda,3))/4.
-    fuip1(3,3) = (solmesh(j,iindb,2) + solmesh(j,iinda,2))/4. - 1./(Re*dx)
-    
-END SUBROUTINE calc_fjacob
+    REAL*8   :: xpos,ypos                     ! Position of the cell centre
+	REAL*8   :: t1,t2,t3,t4,t5,t6,t7,t8,t9    ! Terms in the flux integral (across all 3 components)
 
-! =======================
-
-SUBROUTINE calc_gjacob(jinda, jindb, solmesh, fuj, fujp1) ! Subroutine to compute G Jacobians
+    ! Update trig factors
+    CALL update_trig(xpos, ypos)
     
-    USE meshmod
-    IMPLICIT NONE
+    ! Compute analytic flux integral for P
+	t1 = -pi/beta*(u0*Cx*S2y + v0*S2x*Cy)
     
-    INTEGER                                  :: jinda, jindb     ! Indices of CVs adjacent to face along y-direction
-    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)   :: solmesh          ! Mesh at time level n (could be interim mesh)
-    REAL*8, DIMENSION(3,3)                   :: fuj, fujp1       ! dG/dU_i,j, dG/dU_i,j+1                  
-
-    ! Initialize Jacobians with 0s
-    fuj = 0.0D+0
-    fujp1 = 0.0D+0
+    FI_ana(j,i,1) = t1
     
-    ! Compute non-zero derivatives for dG/dU_i,j
-    fuj(1,3) = 1./(2.*beta)
-    fuj(2,2) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/4. + 1./(Re*dy)
-    fuj(2,3) = (solmesh(jindb,i,2)+solmesh(jinda,i,2))/4.
-    fuj(3,1) = 1./2.
-    fuj(3,3) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/2. + 1./(Re*dy)
-     
-    ! Compute non-zero derivatives for dG/dU_i,j+1
-    fujp1(1,3) = 1./(2.*beta)
-    fujp1(2,2) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/4. - 1./(Re*dy)
-    fujp1(2,3) = (solmesh(jindb,i,2)+solmesh(jinda,i,2))/4.
-    fujp1(3,1) = 1./2.
-    fujp1(3,3) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/2. - 1./(Re*dy)
+    ! Compute analytic flux integral for u
+    t2 = P0*pi*Sx*Cy
+    t3 = -u0**2*pi*S2x*S2y**2
+    t4 = -u0*v0*pi*Sx*S2x*(Cy*S2y + 2.*C2y*Sy)
+    t5 = -u0*(5.*(pi**2)*Sx*S2y/Re)
     
-END SUBROUTINE calc_gjacob
+    FI_ana(j,i,2) = t2 + t3 + t4 + t5
+    
+    ! Compute analytic flux integral for v
+    t6 = P0*pi*Cx*Sy
+    t7 = -v0**2*pi*(S2x**2)*S2y
+    t8 = -u0*v0*pi*Sy*S2y*(Cx*S2x + 2.*C2x*Sx)
+    t9 = -v0*(5.*(pi**2)*S2x*Sy/Re)
 
+    FI_ana(j,i,3) = t6 + t7 + t8 + t9
 
+END SUBROUTINE calc_analytic
 
 ! =======================
-
 
 SUBROUTINE test_jacobian ! Subroutine to test correctness of flux Jacobian
 
@@ -913,6 +776,140 @@ SUBROUTINE test_jacobian ! Subroutine to test correctness of flux Jacobian
 
 END SUBROUTINE test_jacobian
 
+! =======================
+
+!!! Helper subroutines !!!
+
+SUBROUTINE update_trig(xpos,ypos) ! Subroutine to update trig factors
+	
+	USE meshmod
+    IMPLICIT NONE
+	
+	REAL*8 :: xpos,ypos   ! Positions of cell centroids
+	
+    Cx = cos(pi*xpos)
+    Sx = sin(pi*xpos)
+    
+    Cy = cos(pi*ypos)
+    Sy = sin(pi*ypos)
+    
+    C2x = cos(2.*pi*xpos)
+    S2x = sin(2.*pi*xpos)
+    
+    C2y = cos(2.*pi*ypos)
+    S2y = sin(2.*pi*ypos)
+	
+END SUBROUTINE update_trig
+
+! =======================
+
+SUBROUTINE calc_fflux(iinda,iindb,solmesh,flux)    ! Subroutine to calculate x-direction fluxes at a face
+
+    USE meshmod
+    IMPLICIT NONE
+    
+    INTEGER                                :: iinda, iindb     ! Indices of CVs adjacent to face along x-direction
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3) :: solmesh          ! Mesh at time level n (could be interim mesh)
+    REAL*8, DIMENSION(3)                   :: flux             ! Flux at face (P, u, v)                      
+
+    ! P-flux along x-direction
+    flux(1) = (solmesh(j,iindb,2)+solmesh(j,iinda,2))/(2.*beta)
+    
+    ! u-flux along x-direction
+    flux(2) = (((solmesh(j,iindb,2)+solmesh(j,iinda,2))/2.)**2 + (solmesh(j,iindb,1)+solmesh(j,iinda,1))/2. &
+                -1./Re*((solmesh(j,iindb,2)-solmesh(j,iinda,2))/dx))
+                
+    ! v-flux along x-direction
+    flux(3) = (((solmesh(j,iindb,2)+solmesh(j,iinda,2))/2.)*((solmesh(j,iindb,3)+solmesh(j,iinda,3))/2.) &
+               -1./Re*((solmesh(j,iindb,3)-solmesh(j,iinda,3))/dx))
+
+END SUBROUTINE calc_fflux
+
+! =======================
+
+SUBROUTINE calc_gflux(jinda,jindb,solmesh,flux)    ! Subroutine to calculate y-direction fluxes at a face
+
+    USE meshmod
+    IMPLICIT NONE
+    
+    INTEGER                                :: jinda, jindb    ! Indices of CVs adjacent to face along y-direction
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3) :: solmesh         ! Mesh at time level n (could be interim mesh)
+    REAL*8, DIMENSION(3)                   :: flux            ! Flux at face (P, u, v)                          
+
+    ! P-flux along y-direction
+    flux(1) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/(2.*beta)
+    
+    ! u-flux along y-direction
+    flux(2) = (((solmesh(jindb,i,2)+solmesh(jinda,i,2))/2.)*((solmesh(jindb,i,3)+solmesh(jinda,i,3))/2.) &
+           -1./Re*((solmesh(jindb,i,2)-solmesh(jinda,i,2))/dy))
+      
+    ! v-flux along y-direction
+    flux(3) = (((solmesh(jindb,i,3)+solmesh(jinda,i,3))/2.)**2 + (solmesh(jindb,i,1)+solmesh(jinda,i,1))/2. &
+            -1./Re*((solmesh(jindb,i,3)-solmesh(jinda,i,3))/dy))
+
+END SUBROUTINE calc_gflux
+
+! =======================
+
+SUBROUTINE calc_fjacob(iinda, iindb, solmesh, fui, fuip1) ! Subroutine to compute F Jacobians
+    
+    USE meshmod
+    IMPLICIT NONE
+    
+    INTEGER                                  :: iinda, iindb     ! Indices of CVs adjacent to face along x-direction
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)   :: solmesh          ! Mesh at time level n (could be interim mesh)
+    REAL*8, DIMENSION(3,3)                   :: fui, fuip1       ! dF/dU_i,j, dF/dU_i+1,j                  
+
+    ! Initialize Jacobians with 0s
+    fui = 0.0D+0
+    fuip1 = 0.0D+0
+    
+    ! Compute non-zero derivatives for dF/dU_i,j
+    fui(1,2) = 1./(2.*beta)
+    fui(2,1) = 1./2.
+    fui(2,2) = (solmesh(j,iindb,2) + solmesh(j,iinda,2))/2. + 1./(Re*dx)
+    fui(3,2) = (solmesh(j,iindb,3) + solmesh(j,iinda,3))/4.
+    fui(3,3) = (solmesh(j,iindb,2) + solmesh(j,iinda,2))/4. + 1./(Re*dx)
+    
+    ! Compute non-zero derivatives for dF/dU_i+1,j
+    fuip1(1,2) = 1./(2.*beta)
+    fuip1(2,1) = 1./2.
+    fuip1(2,2) = (solmesh(j,iindb,2) + solmesh(j,iinda,2))/2. - 1./(Re*dx)
+    fuip1(3,2) = (solmesh(j,iindb,3) + solmesh(j,iinda,3))/4.
+    fuip1(3,3) = (solmesh(j,iindb,2) + solmesh(j,iinda,2))/4. - 1./(Re*dx)
+    
+END SUBROUTINE calc_fjacob
+
+! =======================
+
+SUBROUTINE calc_gjacob(jinda, jindb, solmesh, fuj, fujp1) ! Subroutine to compute G Jacobians
+    
+    USE meshmod
+    IMPLICIT NONE
+    
+    INTEGER                                  :: jinda, jindb     ! Indices of CVs adjacent to face along y-direction
+    REAL*8, DIMENSION(0:jmax+1,0:imax+1,3)   :: solmesh          ! Mesh at time level n (could be interim mesh)
+    REAL*8, DIMENSION(3,3)                   :: fuj, fujp1       ! dG/dU_i,j, dG/dU_i,j+1                  
+
+    ! Initialize Jacobians with 0s
+    fuj = 0.0D+0
+    fujp1 = 0.0D+0
+    
+    ! Compute non-zero derivatives for dG/dU_i,j
+    fuj(1,3) = 1./(2.*beta)
+    fuj(2,2) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/4. + 1./(Re*dy)
+    fuj(2,3) = (solmesh(jindb,i,2)+solmesh(jinda,i,2))/4.
+    fuj(3,1) = 1./2.
+    fuj(3,3) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/2. + 1./(Re*dy)
+     
+    ! Compute non-zero derivatives for dG/dU_i,j+1
+    fujp1(1,3) = 1./(2.*beta)
+    fujp1(2,2) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/4. - 1./(Re*dy)
+    fujp1(2,3) = (solmesh(jindb,i,2)+solmesh(jinda,i,2))/4.
+    fujp1(3,1) = 1./2.
+    fujp1(3,3) = (solmesh(jindb,i,3)+solmesh(jinda,i,3))/2. - 1./(Re*dy)
+    
+END SUBROUTINE calc_gjacob
 
 
 ! =======================

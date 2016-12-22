@@ -93,20 +93,21 @@ if __name__ == '__main__':
 
 
     fig1,ax1 = plt.subplots(1,1,figsize=(16,12))
-    levels = np.linspace(np.min(speed),np.max(speed),80)
-    #CS = ax1.contour(cols_plot, rows_plot, parray, levels, colors='w',linestyles='dashed')
+    levels = np.linspace(np.min(parray),np.max(parray),80)
+    CS = ax1.contour(cols_plot, rows_plot, parray, levels, colors='w',linestyles='dashed')
     #ax1.clabel(CS, colors='k', fmt='%6.4f', fontsize=16)
-    #contour_filled = ax1.contourf(cols_plot, rows_plot, parray, levels)
+    contour_filled = ax1.contourf(cols_plot, rows_plot, parray, levels)
     #CS = ax1.contour(cols_plot, rows_plot, speed, levels, colors='w',linestyles='dashed')
     #ax1.clabel(CS, colors='k', fmt='%6.4f', fontsize=16)
     #contour_filled = ax1.contourf(cols_plot, rows_plot, speed, levels)
-    #cbar = plt.colorbar(contour_filled)
+    cbar = plt.colorbar(contour_filled)
     ax1.set_xlabel('x', fontsize=fs, fontweight=fw)
     ax1.set_ylabel('y', fontsize=fs, fontweight=fw)
-    ax1.set_title(r'Steady-State Velocity Streamlines and Speeds, Tw = {}, dt = {}, Meshsize = {} X {}'.format(Tw,dt,imax,int(jmax)),fontsize=fs,fontweight=fw)
+    #ax1.set_title(r'Steady-State Velocity Streamlines and Speeds, Tw = {}, dt = {}, Meshsize = {} X {}'.format(Tw,dt,imax,int(jmax)),fontsize=fs,fontweight=fw)
+    ax1.set_title(r'Steady-State Pressure Distribution and Velocity Streamlines, Tw = {}, dt = {}, Meshsize = {} X {}'.format(Tw,dt,imax,int(jmax)),fontsize=fs,fontweight=fw)
     ax1.tick_params(axis='both',which='major',labelsize=20)
-    #cbar.set_label(r'$P_{computed}$',size=fs+5)
-    #cbar.ax.tick_params(labelsize=20)
+    cbar.set_label(r'$P_{computed}$',size=fs+5)
+    cbar.ax.tick_params(labelsize=20)
     
     cols = np.linspace(0,1,imax*filt+1)
     rows = np.linspace(0,ymax/10,jmax*filt+1)
@@ -118,13 +119,14 @@ if __name__ == '__main__':
     #domain = 5*len(speed)/6
     domain = 0
     X, Y = np.meshgrid(cols_plot,rows_plot)
-    lw = speed[domain:,:]/speed.max()
+    lw = 5*speed[domain:,:]/speed.max()
     
     print(np.shape(lw))
-    plt.streamplot(X[domain:,:],Y[domain:,:],uarray[domain:,:],varray[domain:,:],color=lw,cmap=cm.jet,density=5,zorder=5)
-    cbar = plt.colorbar()
-    cbar.set_label(r'Speed',size=fs)
-    cbar.ax.tick_params(labelsize=20)
+    #plt.streamplot(X[domain:,:],Y[domain:,:],uarray[domain:,:],varray[domain:,:],color=lw,cmap=cm.jet,density=5,zorder=5)
+    plt.streamplot(X[domain:,:],Y[domain:,:],uarray[domain:,:],varray[domain:,:],color='k',linewidth=lw,density=5,zorder=5)
+    #cbar = plt.colorbar()
+    #cbar.set_label(r'Speed',size=fs)
+    #cbar.ax.tick_params(labelsize=20)
     print(meshsize)
     figname = "pcontour_velocities_{}_{}_{}_{}_{}_{}_{}_{}_{}_{}.png".format(ymax,tmax,beta,apres,omega,Tw,dt,tol,meshsize,domain)
     savefigure(figname,fig1)
@@ -184,9 +186,9 @@ if __name__ == '__main__':
     
     # ===========================
     
-    ufilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"1"+".txt"
-    vfilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"2"+".txt"
-    pfilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"3"+".txt"
+    pfilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"1"+".txt"
+    ufilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"2"+".txt"
+    vfilename = "converg_"+str(meshsize)+"_xmax_1_ymax_"+str(ymax)+"_dt_" + str(int(dt*100)) + "_p_3_"+str(beta)+"_"+str(apres)+"_"+str(omega)+"_"+str(Tw)+"_"+"3"+".txt"
     
     uconv= []
     vconv = []
